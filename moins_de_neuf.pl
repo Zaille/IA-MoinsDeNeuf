@@ -2341,14 +2341,11 @@ remplacer_sommets_piles(sommets(CS1_new, CS2_new, _), P3, piles(P1_post, P2_post
 %
 % @throws Postcondition.   Le nom du joueur est une clé de la relation.
 %
-
-joueur('Lucas', gloutonne, cerveau_vide).
-joueur('Étienne', gloutonne, cerveau_vide).
-joueur('Antoien', gloutonne, cerveau_vide).
-/*
-joueur(gork1, primitive, cerveau_vide).
+joueur('Lucas', primitive, cerveau_vide).
 joueur(fada, aleatoire, cerveau_vide).
 joueur(bank1, gloutonne, cerveau_vide).
+joueur(gork3, skynet, cerveau_vide).
+/*
 joueur(bank2, gloutonne, cerveau_vide).
 joueur(bank3, gloutonne, cerveau_vide).
 joueur(bank4, gloutonne, cerveau_vide).
@@ -2358,7 +2355,6 @@ joueur('José IIIe', humaine, cerveau_humain).
 joueur('José IIe', humaine, cerveau_humain).
 joueur('José Ier', humaine, cerveau_humain).
 */
-
 
 :- begin_tests(joueur).
 
@@ -2616,6 +2612,7 @@ test(jeu_complet) :-
 strategie(primitive).
 strategie(aleatoire).
 strategie(gloutonne).
+strategie(skynet).
 strategie(humaine).
 
 :- begin_tests(strategie).
@@ -2752,23 +2749,16 @@ defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % 
    piles_defausse_possible(T3, PS),
    random_member(P, PS).                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
 %
-% stratégie humaine
+% stratégie skynet
+% TODO
 %
-defausse_strategique(humaine, PS, M, CSS, T3, B, defausse(CS, P), B) :-  % Enfin, pour la stratégie humaine,
-   assertion( (nonvar(PS), nonvar(M), nonvar(CSS), nonvar(T3), nonvar(B)) ),
-   presenter_jeu(PS, M, CSS, T3),                                        % il suffit de présenter l'état du jeu
-   demander_cartes_defausse(M, CSS, CS),                                 % et de demander.
-   demander_pile(T3, P).
-%
-% stratégie none
-%
-defausse_strategique(none, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,
+defausse_strategique(skynet, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie skynet, en l'absence de combinaison, et seulement en l'absence de combinaison,
    findall((P, C), (member(C, M), points_cartes(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
    argmax_list(C_max, CPS),                                                   % elle sélectionne l'une de celles permettant de se débarrasser d'un maximum de points,
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
    random_member(P, PS).                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
-defausse_strategique(none, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % Si la stratégie gloutonne a des combinaisons en main,
+defausse_strategique(skynet, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % Si la stratégie skynet a des combinaisons en main,
    assertion( nonvar(CSS) ),
    CSS \= [],
    findall((P, CS), (member(CS, CSS), points_cartes(CS, P)), KPS),            % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
@@ -2777,6 +2767,14 @@ defausse_strategique(none, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % Si la
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
    random_member(P, PS).                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
+%
+% stratégie humaine
+%
+defausse_strategique(humaine, PS, M, CSS, T3, B, defausse(CS, P), B) :-  % Enfin, pour la stratégie humaine,
+   assertion( (nonvar(PS), nonvar(M), nonvar(CSS), nonvar(T3), nonvar(B)) ),
+   presenter_jeu(PS, M, CSS, T3),                                        % il suffit de présenter l'état du jeu
+   demander_cartes_defausse(M, CSS, CS),                                 % et de demander.
+   demander_pile(T3, P).
 
 %! presenter_jeu(+PS, +M, +CSS, +T3) is det.
 %
@@ -3188,6 +3186,27 @@ pioche_strategique(gloutonne, _, _, sommets(T1, T2, N_P), B, C, B) :-  % Mais,
    ; V_min >  7 -> C = pioche                                          % sinon on pioche car la probabilité de prendre plus petit a dépassé la moyenne.
    ).
 %
+% stratégie skynet
+% TODO
+%
+pioche_strategique(skynet, _, _, sommets(T1, T2, 0), B, C, B) :-    % Pour ce qui est de la stratégie skynet, si la pioche est vide,
+   append(T1, T2, CS),
+   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
+   % maplist([K, (V, K)]>>carte(K, V, _), CS, VCS),
+   argmin_list(C, VCS),                                                % elle sélectionne une seule de celles permettant de prendre un minimum de points,
+   !.                                                                  % et une seule.
+pioche_strategique(skynet, _, _, sommets(T1, T2, N_P), B, C, B) :-  % Mais,
+   N_P > 0,                                                            % si la pioche n'est pas vide,
+   append(T1, T2, CS),
+   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
+   % maplist([K, (V, K)]>>carte(K, V, _), CS, VCS),
+   argmin_list(C_min, VCS),                                            % es sélectionné une,
+   !,                                                                  % et une seule, de celles
+   carte(C_min, V_min, _),                                             % de valeur minimale,
+   ( V_min =< 7 -> C = C_min                                           % si la valeur de cette dernière est inférieure ou égale à sept, alors on la garde,
+   ; V_min >  7 -> C = pioche                                          % sinon on pioche car la probabilité de prendre plus petit a dépassé la moyenne.
+   ).
+%
 % stratégie humaine
 %
 pioche_strategique(humaine, PS, M, T3, B, C, B) :-  % Enfin, pour la stratégie humaine,
@@ -3202,10 +3221,6 @@ pioche_strategique(humaine, PS, M, T3, B, C, B) :-  % Enfin, pour la stratégie 
    ; K =< N1 -> nth1(K, T1, C)
    ; K >  N1 -> nth1(J, T2, C)
    ).
-%
-% stratégie none
-%
-
 
 %! presenter_cartes_ramassables(+T3, -N_min, -N_max) is det.
 %
@@ -3634,7 +3649,26 @@ annonce_strategique(gloutonne, _, M, _, B, 'moins de neuf', B) :-  % La stratég
    random_between(1, 100, A),
    A =< Pr,
    !.
-annonce_strategique(gloutonne, _, _, _, B, 'sans annonce', B).
+%
+% stratégie skynet
+% TODO
+%
+annonce_strategique(skynet, _, M, _, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
+   assertion( (nonvar(M), nonvar(B)) ),
+   points_cartes(M, P),                                            % en fonction des points de la main,
+   member((P, Pr), [ (1, 100)                                      % avec une probabilité d'autant plus faible que les points sont élevés,
+                   , (2,  77)                                      % ici en suivant une loi exponentielle : (1 - (P - 1) / 8)^2.
+                   , (3,  56)
+                   , (4,  39)
+                   , (5,  25)
+                   , (6,  14)
+                   , (7,   6)
+                   , (8,   2)
+                   ]),
+   random_between(1, 100, A),
+   A =< Pr,
+   !.
+annonce_strategique(skynet, _, _, _, B, 'sans annonce', B).
 %
 % stratégie humaine
 %
