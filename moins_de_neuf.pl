@@ -2341,10 +2341,10 @@ remplacer_sommets_piles(sommets(CS1_new, CS2_new, _), P3, piles(P1_post, P2_post
 %
 % @throws Postcondition.   Le nom du joueur est une clé de la relation.
 %
-joueur('Lucas', primitive, cerveau_vide).
+joueur(gork1, primitive, cerveau_vide).
 joueur(fada, aleatoire, cerveau_vide).
 joueur(bank1, gloutonne, cerveau_vide).
-joueur(gork3, skynet, cerveau_vide).
+joueur('etienne', skynet, cerveau_humain).
 /*
 joueur(bank2, gloutonne, cerveau_vide).
 joueur(bank3, gloutonne, cerveau_vide).
@@ -3649,6 +3649,7 @@ annonce_strategique(gloutonne, _, M, _, B, 'moins de neuf', B) :-  % La stratég
    random_between(1, 100, A),
    A =< Pr,
    !.
+annonce_strategique(gloutonne, _, _, _, B, 'sans annonce', B).
 %
 % stratégie skynet
 % TODO
