@@ -2344,7 +2344,7 @@ remplacer_sommets_piles(sommets(CS1_new, CS2_new, _), P3, piles(P1_post, P2_post
 joueur(gork1, primitive, cerveau_vide).
 joueur(fada, aleatoire, cerveau_vide).
 joueur(bank1, gloutonne, cerveau_vide).
-joueur('etienne', skynet, cerveau_humain).
+joueur('etienne', skynet, cerveau_vide).
 /*
 joueur(bank2, gloutonne, cerveau_vide).
 joueur(bank3, gloutonne, cerveau_vide).
