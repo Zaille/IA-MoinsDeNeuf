@@ -227,7 +227,9 @@
                           , is_random_subset_of_exactly/3
                           ]).
 
+:- use_module(skynet, [ min_points_piles/2
 
+                      ]).
 
 
 
@@ -3655,19 +3657,6 @@ annonce_strategique(gloutonne, _, _, _, B, 'sans annonce', B).
 % TODO
 %
 
-min_points_piles(sommets(T1, T2, _), P) :-
-   append(T1, T2, CS),
-   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),
-   argmin_list(C, VCS),                                                % elle sélectionne une seule de celles permettant de prendre un minimum de points,
-   points_carte(C, P),
-   !.
-
-annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
-   assertion( (nonvar(M), nonvar(B)) ),
-   min_points_piles(T3, VT),
-   points_cartes(M, VM),                                            % en fonction des points de la main,
-   VM =< VT,
-   !.
 annonce_strategique(skynet, _, _, _, B, 'sans annonce', B).
 %
 % stratégie humaine
