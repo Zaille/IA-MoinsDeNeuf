@@ -2734,7 +2734,7 @@ defausse_strategique(aleatoire, _, _, CSS, T3, B, defausse(CS, P), B) :-  % En r
 % stratégie gloutonne
 %
 defausse_strategique(gloutonne, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,
-   findall((P, C), (member(C, M), points_carte(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
+   findall((P, C), (member(C, M), points_carte(C, P)), CPS),                  % après avoir calculé le nombre de points de chaque carte présente dans la main,
    argmax_list(C_max, CPS),                                                   % elle sélectionne l'une de celles permettant de se débarrasser d'un maximum de points,
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
@@ -2752,9 +2752,8 @@ defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % 
 % stratégie skynet
 % TODO
 %
-defausse_strategique(skynet, DD, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie skynet, en l'absence de combinaison, et seulement en l'absence de combinaison,
-   % write(DD),nl,
-   findall((P, C), (member(C, M), points_carte(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
+defausse_strategique(skynet, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie skynet, en l'absence de combinaison, et seulement en l'absence de combinaison,
+   findall((P, C), (member(C, M), points_carte(C, P)), CPS),                  % après avoir calculé le nombre de points de chaque carte présente dans la main,
    argmax_list(C_max, CPS),                                                   % elle sélectionne l'une de celles permettant de se débarrasser d'un maximum de points,
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
@@ -2762,7 +2761,7 @@ defausse_strategique(skynet, DD, M, [], T3, B, defausse([C_max], P), B) :-  % Qu
 defausse_strategique(skynet, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % Si la stratégie skynet a des combinaisons en main,
    assertion( nonvar(CSS) ),
    CSS \= [],
-   findall((P, CS), (member(CS, CSS), points_cartes(CS, P)), KPS),            % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
+   findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),  % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
    % maplist([CS, (P, CS)]>>points_cartes(CS, P), CSS, KPS),                  % (la version avec lambda se révélant trop coûteuse),
    argmax_list(CS_max, KPS),                                                  % elle sélectionne l'une de celles permettant de poser un maximum de points,
    !,                                                                         % et une seule,
