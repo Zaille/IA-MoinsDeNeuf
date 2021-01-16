@@ -228,8 +228,9 @@
                           ]).
 
 :- use_module(skynet, [ min_points_piles/2,
-                        choisir_pile_min_points/3
-                      ]).
+                        choisir_pile_min_points/3,
+                        recup_pioche_opti/4
+]).
 
 
 
@@ -3236,23 +3237,10 @@ pioche_strategique(gloutonne, _, _, sommets(T1, T2, N_P), B, C, B) :-  % Mais,
 % stratégie skynet
 % TODO
 %
-pioche_strategique(skynet, _, _, sommets(T1, T2, 0), B, C, B) :-    % Pour ce qui est de la stratégie skynet, si la pioche est vide,
+pioche_strategique(skynet, _, M, sommets(T1, T2, N_P), B, C, B) :-
    append(T1, T2, CS),
-   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
-   % maplist([K, (V, K)]>>carte(K, V, _), CS, VCS),
-   argmin_list(C, VCS),                                                % elle sélectionne une seule de celles permettant de prendre un minimum de points,
-   !.                                                                  % et une seule.
-pioche_strategique(skynet, _, _, sommets(T1, T2, N_P), B, C, B) :-  % Mais,
-   N_P > 0,                                                            % si la pioche n'est pas vide,
-   append(T1, T2, CS),
-   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
-   % maplist([K, (V, K)]>>carte(K, V, _), CS, VCS),
-   argmin_list(C_min, VCS),                                            % es sélectionné une,
-   !,                                                                  % et une seule, de celles
-   carte(C_min, V_min, _),                                             % de valeur minimale,
-   ( V_min =< 7 -> C = C_min                                           % si la valeur de cette dernière est inférieure ou égale à sept, alors on la garde,
-   ; V_min >  7 -> C = pioche                                          % sinon on pioche car la probabilité de prendre plus petit a dépassé la moyenne.
-   ).
+   recup_pioche_opti(CS, M, N_P, C),
+   !.
 %
 % stratégie humaine
 %

@@ -11,11 +11,13 @@
 
 :- module(skynet, [
                         min_points_piles/2,
-                        choisir_pile_min_points/3
+                        choisir_pile_min_points/3,
+                        recup_pioche_opti/4
                       ]).
 
 :- use_module(utilities, [
-                         argmin_list/2
+                         argmin_list/2,
+                         argmax_list/2
                          ]).
 
 
@@ -54,4 +56,31 @@ choisir_pile_min_points(sommets(T1, T2, _), [pile_1,pile_2], P) :-
    ( V1 =< V2 -> P = pile_2
    ; V1 > V2 -> P = pile_1 ),
    !.
+
+
+defaut_pioche(CS, 0, C) :-
+   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
+   % maplist([K, (V, K)]>>carte(K, V, _), CS, VCS),
+   argmin_list(C, VCS),                                                % elle sélectionne une seule de celles permettant de prendre un minimum de points,
+   !.                                                                  % et une seule.
+defaut_pioche(CS, N_P, C) :-
+   N_P > 0,
+   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
+   % maplist([K, (V, K)]>>carte(K, V, _), CS, VCS),
+   argmin_list(C_min, VCS),                                            % es sélectionné une,
+   !,                                                                  % et une seule, de celles
+   carte(C_min, V_min, _),                                             % de valeur minimale,
+   ( V_min =< 7 -> C = C_min                                           % si la valeur de cette dernière est inférieure ou égale à sept, alors on la garde,
+   ; V_min >  7 -> C = pioche                                          % sinon on pioche car la probabilité de prendre plus petit a dépassé la moyenne.
+   ),
+   !.
+
+recup_pioche_opti(T, M, N_P, C) :-
+   length(M, L),
+   findall((P, CT), (member(CT, T), combinaison([CT|M], CB), cartes_combinaison(CS, CB), length(CS, NCS), L > NCS, points_cartes(CS, P)), CSS),
+   length(CSS, CSSL),
+   (( CSSL >= 1, argmax_list(C, CSS) )
+   ; ( CSSL == 0, defaut_pioche(T, N_P, C) )),
+   !.
+
 
