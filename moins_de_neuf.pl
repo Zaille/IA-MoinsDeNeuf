@@ -227,8 +227,8 @@
                           , is_random_subset_of_exactly/3
                           ]).
 
-:- use_module(skynet, [ min_points_piles/2
-
+:- use_module(skynet, [ min_points_piles/2,
+                        choisir_pile_min_points/3
                       ]).
 
 
@@ -2754,16 +2754,13 @@ defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % 
 % stratégie skynet
 % TODO
 %
-defausse_strategique(skynet, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,
-    findall((P, C), (member(C, M), points_carte(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
-    argmax_list(C_max, CPS),                                                   % elle sélectionne l'une de celles permettant de se débarrasser d'un maximum de points,
-    !,                                                                         % et une seule,
+defausse_strategique(skynet, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,                                                                        % et une seule,
     check_piles_for_combi(T3, M, LSS),                                         % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
-    get_max_score_combi(LSS, _, P, CB, _, T3).
-%    remove_elements_liste(CB, M, M1),
-%    format("- M1 : ~w\n\n", [M1]),
-%    findall((P, C), (member(C, M1), points_carte(C, P)), CPS),
-%    argmax_list(C_max, CPS).
+    get_max_score_combi(LSS, _, P, CB, _, T3),
+    remove_elements_liste(CB, M, M1),
+    findall((P1, C), (member(C, M1), points_carte(C, P1)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
+    argmax_list(C_max, CPS),
+    !.
 defausse_strategique(skynet, _, M, CSS, T3, B, defausse(CS_max, P), B) :-     % Si la stratégie skynet a des combinaisons en main,
    assertion( nonvar(CSS) ),
    CSS \= [],
@@ -2782,17 +2779,22 @@ defausse_strategique(humaine, PS, M, CSS, T3, B, defausse(CS, P), B) :-  % Enfin
    demander_cartes_defausse(M, CSS, CS),                                 % et de demander.
    demander_pile(T3, P).
 
-remove_elements_liste(_, [], []).
-remove_elements_liste([CS|CB], [CS|M], M1) :-
-    remove_elements_liste(CB, M, M1).
-remove_elements_liste([CS|CB], [C|M], [C|M1]) :-
-    C \= CS,
-    remove_elements_liste(CB, M, M1).
+remove_elements_liste([], M, M).
+remove_elements_liste([CS|CB], M, M2) :-
+    remove_element_liste(CS, M, M1),
+    remove_elements_liste(CB, M1, M2).
 
-get_max_score_combi([], 0, P, _, _, T3) :-
+remove_element_liste(_, [], []).
+remove_element_liste(CS, [CS|M], M1) :-
+    remove_element_liste(CS, M, M1).
+remove_element_liste(CS, [C|M], [C|M1]) :-
+    C \= CS,
+    remove_element_liste(CS, M, M1).
+
+get_max_score_combi([], 0, P, [], _, T3) :-
     piles_defausse_possible(T3, PS),
-    random_member(P, PS),
-    !.
+    !,
+    choisir_pile_min_points(T3, PS, P).
 get_max_score_combi([(P1,CB,C,S)|[]], S, P2, CB, C, _) :-
     ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) ),
     !.
@@ -2818,7 +2820,8 @@ check_piles_for_combi(sommets(T1,T2,_), M, CSS) :-
    append(CSS1, CSS2, CSS).
 
 check_pile_for_combi(T, M, N, CSS) :-
-   findall((N, CS, C, P), (member(C, T), combinaison([C|M], CB), cartes_combinaison(CS, CB), points_cartes(CS, P)), CSS).
+   length(M, L),
+   findall((N, CS, C, P), (member(C, T), combinaison([C|M], CB), cartes_combinaison(CS, CB), length(CS, NCS), L > NCS, points_cartes(CS, P)), CSS).
 
 %! presenter_jeu(+PS, +M, +CSS, +T3) is det.
 %

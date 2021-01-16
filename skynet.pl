@@ -10,7 +10,8 @@
  */
 
 :- module(skynet, [
-                        min_points_piles/2
+                        min_points_piles/2,
+                        choisir_pile_min_points/3
                       ]).
 
 :- use_module(utilities, [
@@ -36,3 +37,21 @@ min_points_piles(sommets(T1, T2, _), P) :-
    argmin_list(C, VCS),                                                % on récupère la carte avec le minimum de points,
    points_carte(C, P),
    !.
+
+min_points_pile([], 1000) .
+min_points_pile(T, P) :-
+  findall((V, K), (member(K, T), carte(K, V, _)), VCS),
+  argmin_list(C, VCS),                                                % on récupère la carte avec le minimum de points,
+  points_carte(C, P),
+  !.
+
+
+choisir_pile_min_points(_, [pile_1], pile_1) .
+choisir_pile_min_points(_, [pile_2], pile_2) .
+choisir_pile_min_points(sommets(T1, T2, _), [pile_1,pile_2], P) :-
+   min_points_pile(T1, V1),
+   min_points_pile(T2, V2),
+   ( V1 =< V2 -> P = pile_2
+   ; V1 > V2 -> P = pile_1 ),
+   !.
+
