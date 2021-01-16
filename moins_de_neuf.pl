@@ -2344,7 +2344,7 @@ remplacer_sommets_piles(sommets(CS1_new, CS2_new, _), P3, piles(P1_post, P2_post
 joueur('skynet', skynet, cerveau_vide).
 joueur("gloutonne", gloutonne, cerveau_vide).
 joueur("primitive", primitive, cerveau_vide).
-joueur("aleatoire", aleatoire, cerveau_vide).
+joueur("gloutonne2", gloutonne, cerveau_vide).
 /*
 joueur(bank2, gloutonne, cerveau_vide).
 joueur(bank3, gloutonne, cerveau_vide).
@@ -3603,8 +3603,8 @@ test(petite_permutation) :-
 % @arg PS       Les plis précédents
 % @arg M        Une main permettant d'annoncer "moins de neuf"
 % @arg T3       Les sommets des trois piles sur la table
-% @arg A        L'annonce, ou son absence
 % @arg B        L'état du cerveau ("brain") du joueur
+% @arg A        L'annonce, ou son absence
 % @arg B_post   L'état du cerveau ("brain") du joueur après avoir réfléchi
 %
 % @throws Precondition.   Les cartes en main totalisent strictement moins de neuf points.
@@ -3654,20 +3654,19 @@ annonce_strategique(gloutonne, _, _, _, B, 'sans annonce', B).
 % stratégie skynet
 % TODO
 %
-annonce_strategique(skynet, _, M, _, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
+
+min_points_piles(sommets(T1, T2, _), P) :-
+   append(T1, T2, CS),
+   findall((V, K), (member(K, CS), carte(K, V, _)), VCS),
+   argmin_list(C, VCS),                                                % elle sélectionne une seule de celles permettant de prendre un minimum de points,
+   points_carte(C, P),
+   !.
+
+annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
    assertion( (nonvar(M), nonvar(B)) ),
-   points_cartes(M, P),                                            % en fonction des points de la main,
-   member((P, Pr), [ (1, 100)                                      % avec une probabilité d'autant plus faible que les points sont élevés,
-                   , (2,  77)                                      % ici en suivant une loi exponentielle : (1 - (P - 1) / 8)^2.
-                   , (3,  56)
-                   , (4,  39)
-                   , (5,  25)
-                   , (6,  14)
-                   , (7,   6)
-                   , (8,   2)
-                   ]),
-   random_between(1, 100, A),
-   A =< Pr,
+   min_points_piles(T3, VT),
+   points_cartes(M, VM),                                            % en fonction des points de la main,
+   VM =< VT,
    !.
 annonce_strategique(skynet, _, _, _, B, 'sans annonce', B).
 %
