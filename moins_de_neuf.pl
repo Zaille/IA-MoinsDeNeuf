@@ -2341,10 +2341,10 @@ remplacer_sommets_piles(sommets(CS1_new, CS2_new, _), P3, piles(P1_post, P2_post
 %
 % @throws Postcondition.   Le nom du joueur est une clé de la relation.
 %
-joueur(gork1, primitive, cerveau_vide).
-joueur(fada, aleatoire, cerveau_vide).
-joueur(bank1, gloutonne, cerveau_vide).
-joueur('etienne', skynet, cerveau_vide).
+joueur('skynet', skynet, cerveau_vide).
+joueur("gloutonne", gloutonne, cerveau_vide).
+joueur("primitive", primitive, cerveau_vide).
+joueur("aleatoire", aleatoire, cerveau_vide).
 /*
 joueur(bank2, gloutonne, cerveau_vide).
 joueur(bank3, gloutonne, cerveau_vide).
@@ -2734,7 +2734,7 @@ defausse_strategique(aleatoire, _, _, CSS, T3, B, defausse(CS, P), B) :-  % En r
 % stratégie gloutonne
 %
 defausse_strategique(gloutonne, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,
-   findall((P, C), (member(C, M), points_cartes(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
+   findall((P, C), (member(C, M), points_carte(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
    argmax_list(C_max, CPS),                                                   % elle sélectionne l'une de celles permettant de se débarrasser d'un maximum de points,
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
@@ -4357,7 +4357,7 @@ continuer_manche(JS, _, PS, P3, JMBS, J_post, JSBS_post, P) :-
    [etat_joueur(A, _, _) | _] = JMBS,                              % qui a été lancé par l'annonceur
    scores_manche(A, JMS, JSS),                                     % et à l'issue duquel les scores des joueurs sont calculés.
    findall( etat_joueur(Jr, Sc, Br)
-          , ( member(joueur(Jr, Br), JS)
+          , ( member(etat_joueur(Jr, _, Br), JMBS)
             , member((Jr, Sc), JSS)
             )
           , JSBS_post
