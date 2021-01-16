@@ -2752,8 +2752,9 @@ defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % 
 % stratégie skynet
 % TODO
 %
-defausse_strategique(skynet, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie skynet, en l'absence de combinaison, et seulement en l'absence de combinaison,
-   findall((P, C), (member(C, M), points_cartes(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
+defausse_strategique(skynet, DD, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie skynet, en l'absence de combinaison, et seulement en l'absence de combinaison,
+   % write(DD),nl,
+   findall((P, C), (member(C, M), points_carte(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
    argmax_list(C_max, CPS),                                                   % elle sélectionne l'une de celles permettant de se débarrasser d'un maximum de points,
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
@@ -4478,7 +4479,7 @@ test(perdant) :-
 %
 % @throws Postcondition.   Le nombre de manches est un entier _strictement_ positif.
 %
-nombre_manches(7).
+nombre_manches(200).
 
 :- begin_tests(nombre_manches).
 

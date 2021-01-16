@@ -1,0 +1,1 @@
+swipl -f moins_de_neuf.pl -g "moins_de_neuf:jouer_partie." -t halt
