@@ -3656,6 +3656,12 @@ annonce_strategique(gloutonne, _, _, _, B, 'sans annonce', B).
 % stratégie skynet
 % TODO
 %
+annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
+   assertion( (nonvar(M), nonvar(B)) ),
+   min_points_piles(T3, VT),                                     % Les points de la carte min sur les piles
+   points_cartes(M, VM),                                         % La somme des points de nos cartes,
+   VM =< VT,
+   !.
 
 annonce_strategique(skynet, _, _, _, B, 'sans annonce', B).
 %
@@ -4466,7 +4472,7 @@ test(perdant) :-
 %
 % @throws Postcondition.   Le nombre de manches est un entier _strictement_ positif.
 %
-nombre_manches(200).
+nombre_manches(1000).
 
 :- begin_tests(nombre_manches).
 
