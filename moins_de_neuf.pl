@@ -2349,11 +2349,9 @@ remplacer_sommets_piles(sommets(CS1_new, CS2_new, _), P3, piles(P1_post, P2_post
 %
 % @throws Postcondition.   Le nom du joueur est une clé de la relation.
 %
-joueur('skynet', skynet, cerveau_vide).
-joueur("gloutonne", gloutonne, cerveau_vide).
+joueur("gloutonne", gloutonne, cerveau_glouton(0, 0, 0)).
 joueur("primitive", primitive, cerveau_vide).
-joueur("gloutonne2", gloutonne, cerveau_vide).
-
+joueur("gloutonne2", gloutonne, cerveau_glouton(0, 0, 0)).
 /*
 joueur(bank2, gloutonne, cerveau_vide).
 joueur(bank3, gloutonne, cerveau_vide).
@@ -2364,6 +2362,11 @@ joueur('José IIIe', humaine, cerveau_humain).
 joueur('José IIe', humaine, cerveau_humain).
 joueur('José Ier', humaine, cerveau_humain).
 */
+
+cerveau_defaut(primitive, cerveau_vide).
+cerveau_defaut(aleatoire, cerveau_vide).
+cerveau_defaut(gloutonne, cerveau_glouton(0, 0, 0)). % L'approche gloutonne compte le nombre d'actions stratégiques effectuées. Cela ne sert à rien sauf à vérifier que les cerveaux évoluent correctement.
+cerveau_defaut(humaine, cerveau_humain).
 
 :- begin_tests(joueur).
 
@@ -2621,7 +2624,6 @@ test(jeu_complet) :-
 strategie(primitive).
 strategie(aleatoire).
 strategie(gloutonne).
-strategie(skynet).
 strategie(humaine).
 
 :- begin_tests(strategie).
@@ -2742,37 +2744,24 @@ defausse_strategique(aleatoire, _, _, CSS, T3, B, defausse(CS, P), B) :-  % En r
 %
 % stratégie gloutonne
 %
-defausse_strategique(gloutonne, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,
-   findall((P, C), (member(C, M), points_carte(C, P)), CPS),                  % après avoir calculé le nombre de points de chaque carte présente dans la main,
+defausse_strategique(gloutonne, _, M, [], T3, cerveau_glouton(B1, B2, B3), defausse([C_max], P), cerveau_glouton(B1_plus_1, B2, B3)) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,
+   findall((P, C), (member(C, M), points_cartes(C, P)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
    argmax_list(C_max, CPS),                                                   % elle sélectionne l'une de celles permettant de se débarrasser d'un maximum de points,
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
-   random_member(P, PS).                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
-defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % Si la stratégie gloutonne a des combinaisons en main,
+   random_member(P, PS),                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
+   plus(B1, 1, B1_plus_1).
+defausse_strategique(gloutonne, _, _, CSS, T3, cerveau_glouton(B1, B2, B3), defausse(CS_max, P), cerveau_glouton(B1_plus_1, B2, B3)) :-  % Si la stratégie gloutonne a des combinaisons en main,
    assertion( nonvar(CSS) ),
+   assertion( ( nonvar(B1), nonvar(B2), nonvar(B3)) ),
    CSS \= [],
    findall((P, CS), (member(CS, CSS), points_cartes(CS, P)), KPS),            % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
    % maplist([CS, (P, CS)]>>points_cartes(CS, P), CSS, KPS),                  % (la version avec lambda se révélant trop coûteuse),
    argmax_list(CS_max, KPS),                                                  % elle sélectionne l'une de celles permettant de poser un maximum de points,
    !,                                                                         % et une seule,
    piles_defausse_possible(T3, PS),
-   random_member(P, PS).                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
-%
-% stratégie skynet
-% Récap stratégie : TODO
-%
-defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
-    check_piles_for_combi(T3, M, LSS),
-    get_max_score_combi(LSS, _, P, CB, _, T3),
-    (( CB \= [],
-    cartes_combinaison(CBB, CB),
-    remove_elements_liste(CBB, M, M1),
-    defausse_pioche_opti(M1, C_max)
-    ) ; (
-        defausse_pioche_opti(M, C_max)
-    )),
-    !.
-
+   random_member(P, PS),                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
+   plus(B1, 1, B1_plus_1).
 %
 % stratégie humaine
 %
@@ -2917,8 +2906,9 @@ test(det) :-
                       , S \= humaine
                       , random_sommets(J, T3)
                       , \+ sommets_vides(T3)
+                      , cerveau_defaut(S, B)
                       )
-                    , aggregate_all(count, defausse_strategique(S, [], M, CSS, T3, cerveau_vide, _, _), 1)
+                    , aggregate_all(count, defausse_strategique(S, [], M, CSS, T3, B, _, _), 1)
                     ) ).
 
 test(combinaison_existante_ou_carte) :-
@@ -2930,7 +2920,8 @@ test(combinaison_existante_ou_carte) :-
                       , S \= humaine
                       , random_sommets(J, T3)
                       , \+ sommets_vides(T3)
-                      , defausse_strategique(S, [], M, CSS, T3, cerveau_vide, D, _)
+                      , cerveau_defaut(S, B)
+                      , defausse_strategique(S, [], M, CSS, T3, B, D, _)
                       )
                     , ( D = defausse([C], _) -> member(C, M)
                       ; D = defausse(CS, _)  -> member(CS, CSS) 
@@ -2946,7 +2937,8 @@ test(pile_existante_si_combinaison_existante) :-
                       , S \= humaine
                       , random_sommets(J, T3)
                       , \+ sommets_vides(T3)
-                      , defausse_strategique(S, [], M, CSS, T3, cerveau_vide, defausse(_, P), _)
+                      , cerveau_defaut(S, B)
+                      , defausse_strategique(S, [], M, CSS, T3, B, defausse(_, P), _)
                       )
                     , member(P, [pile_1, pile_2])
                     ) ).
@@ -3023,8 +3015,9 @@ test(det_strategie) :-
                       , S \= humaine
                       , random_sommets(J, T3)
                       , \+ sommets_vides(T3)
+                      , cerveau_defaut(S, B)
                       )
-                    , defausse(S, [], M, T3, cerveau_vide, _, _)
+                    , defausse(S, [], M, T3, B, _, _)
                     ) ).
 
 test(combinaison_ou_carte_existante_ou_aucune_defausse) :-
@@ -3035,7 +3028,8 @@ test(combinaison_ou_carte_existante_ou_aucune_defausse) :-
                       , S \= humaine
                       , random_sommets(J, T3)
                       , \+ sommets_vides(T3)
-                      , defausse(S, [], M, T3, cerveau_vide, D, _)
+                      , cerveau_defaut(S, B)
+                      , defausse(S, [], M, T3, B, D, _)
                       )
                     , ( D = 'aucune defausse' -> true
                       ; D = defausse([C], _)  -> member(C, M)
@@ -3051,7 +3045,8 @@ test(pile_existante_si_carte) :-
                       , S \= humaine
                       , random_sommets(J, T3)
                       , \+ sommets_vides(T3)
-                      , defausse(S, [], M, T3, cerveau_vide, D, _)
+                      , cerveau_defaut(S, B)
+                      , defausse(S, [], M, T3, B, D, _)
                       )
                     , ( D = 'aucune defausse'
                       ; ( D = defausse(_, P)
@@ -3174,13 +3169,15 @@ pioche_strategique(aleatoire, _, _, sommets(CS1, CS2, N_P), B, C, B) :-
 %
 % stratégie gloutonne
 %
-pioche_strategique(gloutonne, _, _, sommets(T1, T2, 0), B, C, B) :-    % Pour ce qui est de la stratégie gloutonne, si la pioche est vide,
+pioche_strategique(gloutonne, _, _, sommets(T1, T2, 0), cerveau_glouton(B1, B2, B3), C, cerveau_glouton(B1, B2_plus_1, B3)) :-    % Pour ce qui est de la stratégie gloutonne, si la pioche est vide,
+   assertion( ( nonvar(B1), nonvar(B2), nonvar(B3)) ),
    append(T1, T2, CS),
    findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
    % maplist([K, (V, K)]>>carte(K, V, _), CS, VCS),
    argmin_list(C, VCS),                                                % elle sélectionne une seule de celles permettant de prendre un minimum de points,
-   !.                                                                  % et une seule.
-pioche_strategique(gloutonne, _, _, sommets(T1, T2, N_P), B, C, B) :-  % Mais,
+   !,                                                                  % et une seule.
+   plus(B2, 1, B2_plus_1).
+pioche_strategique(gloutonne, _, _, sommets(T1, T2, N_P), cerveau_glouton(B1, B2, B3), C, cerveau_glouton(B1, B2_plus_1, B3)) :-  % Mais,
    N_P > 0,                                                            % si la pioche n'est pas vide,
    append(T1, T2, CS),
    findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
@@ -3190,15 +3187,8 @@ pioche_strategique(gloutonne, _, _, sommets(T1, T2, N_P), B, C, B) :-  % Mais,
    carte(C_min, V_min, _),                                             % de valeur minimale,
    ( V_min =< 7 -> C = C_min                                           % si la valeur de cette dernière est inférieure ou égale à sept, alors on la garde,
    ; V_min >  7 -> C = pioche                                          % sinon on pioche car la probabilité de prendre plus petit a dépassé la moyenne.
-   ).
-%
-% stratégie skynet
-% Récap strategie: On pioche soit la carte qui nous permet de faire la plus grosse combinaison, soit s'il n’y a pas de combinaison possible, la carte la plus faible (si elle est supérieur à, 7 on pioche).
-%
-pioche_strategique(skynet, _, M, sommets(T1, T2, N_P), B, C, B) :-
-   append(T1, T2, CS),                                                 % On concatène les deux piles
-   recup_pioche_opti(CS, M, N_P, C),                                   % On récupère la carte à piocher en fonction des paramètres d'entrés
-   !.
+   ),
+   plus(B2, 1, B2_plus_1).
 %
 % stratégie humaine
 %
@@ -3264,8 +3254,9 @@ test(det) :-
                       , \+ pioche_imposee(T3, _)
                       , strategie(S)
                       , S \= humaine
+                      , cerveau_defaut(S, B)
                       )
-                    , aggregate_all(count, pioche_strategique(S, M, [], T3, cerveau_vide, _, _), 1)
+                    , aggregate_all(count, pioche_strategique(S, M, [], T3, B, _, _), 1)
                     ) ).
 
 test(carte_existante_ou_pioche) :-
@@ -3277,7 +3268,8 @@ test(carte_existante_ou_pioche) :-
                       , \+ pioche_imposee(T3, _)
                       , strategie(S)
                       , S \= humaine
-                      , pioche_strategique(S, M, [], T3, cerveau_vide, C, _)
+                      , cerveau_defaut(S, B)
+                      , pioche_strategique(S, M, [], T3, B, C, _)
                       , sommets(T1, T2, _) = T3
                       )
                     , ( member(C, T1)
@@ -3421,8 +3413,9 @@ test(det) :-
                       , \+ sommets_vides(T3)
                       , strategie(S)
                       , S \= humaine
+                      , cerveau_defaut(S, B)
                       )
-                    , aggregate_all(count, pli(S, [], M, T3, cerveau_vide, _, _, _, _), 1)
+                    , aggregate_all(count, pli(S, [], M, T3, B, _, _, _, _), 1)
                     ) ).
 
 test(nouvelle_main_non_vide) :-
@@ -3434,8 +3427,9 @@ test(nouvelle_main_non_vide) :-
                       , \+ sommets_vides(T3)
                       , strategie(S)
                       , S \= humaine
+                      , cerveau_defaut(S, B)
                       )
-                    , pli(S, [], M, T3, cerveau_vide, _, [_ | _], _, _)
+                    , pli(S, [], M, T3, B, _, [_ | _], _, _)
                     ) ).
 
 test(nouvelle_main_differente_sauf_exception) :-
@@ -3447,7 +3441,8 @@ test(nouvelle_main_differente_sauf_exception) :-
                       , \+ sommets_vides(T3)
                       , strategie(S)
                       , S \= humaine
-                      , pli(S, [], M, T3, cerveau_vide, P, M_post, _, _)
+                      , cerveau_defaut(S, B)
+                      , pli(S, [], M, T3, B, P, M_post, _, _)
                       )
                     , ( sort(M, M_sorted)
                       , sort(M_post, M_post_sorted)
@@ -3466,7 +3461,8 @@ test(si_pioche_premiere) :-
                       , \+ sommets_vides(T3)
                       , strategie(S)
                       , S \= humaine
-                      , pli(S, [], M, T3, cerveau_vide, _, [_ | CS], _, _)
+                      , cerveau_defaut(S, B)
+                      , pli(S, [], M, T3, B, _, [_ | CS], _, _)
                       )
                     , forall( member(C, CS)
                             , C \= pioche
@@ -3586,6 +3582,16 @@ test(petite_permutation) :-
                       )
                     ) ).
 
+test(cerveau_final_strategie_gloutonne) :-
+   jeu(CS),
+   assertion( forall( ( between(1, 100, _)
+                      , joueur(J, gloutonne, B)
+                      , distribution(CS, [M | _], P3)
+                      , jouer_pli(J, [], M, P3, B, _, _, _, B_post)
+                      )
+                    , B \= B_post
+                    ) ).
+
 :- end_tests(jouer_pli).
 
 %! annonce_strategique(+S: atom, +M: [carte], +T3: sommets, +B, -A: { 'sans annonce', 'moins de neuf' }, -B_post) is det.
@@ -3596,8 +3602,8 @@ test(petite_permutation) :-
 % @arg PS       Les plis précédents
 % @arg M        Une main permettant d'annoncer "moins de neuf"
 % @arg T3       Les sommets des trois piles sur la table
-% @arg B        L'état du cerveau ("brain") du joueur
 % @arg A        L'annonce, ou son absence
+% @arg B        L'état du cerveau ("brain") du joueur
 % @arg B_post   L'état du cerveau ("brain") du joueur après avoir réfléchi
 %
 % @throws Precondition.   Les cartes en main totalisent strictement moins de neuf points.
@@ -3627,8 +3633,9 @@ annonce_strategique(aleatoire, _, _, _, B, 'sans annonce', B).
 %
 % stratégie gloutonne
 %
-annonce_strategique(gloutonne, _, M, _, B, 'moins de neuf', B) :-  % La stratégie gloutonne s'arrête,
-   assertion( (nonvar(M), nonvar(B)) ),
+annonce_strategique(gloutonne, _, M, _, cerveau_glouton(B1, B2, B3), 'moins de neuf', cerveau_glouton(B1, B2, B3_plus_1)) :-  % La stratégie gloutonne s'arrête,
+   assertion( nonvar(M) ),
+   assertion( ( nonvar(B1), nonvar(B2), nonvar(B3)) ),
    points_cartes(M, P),                                            % en fonction des points de la main,
    member((P, Pr), [ (1, 100)                                      % avec une probabilité d'autant plus faible que les points sont élevés,
                    , (2,  77)                                      % ici en suivant une loi exponentielle : (1 - (P - 1) / 8)^2.
@@ -3641,21 +3648,10 @@ annonce_strategique(gloutonne, _, M, _, B, 'moins de neuf', B) :-  % La stratég
                    ]),
    random_between(1, 100, A),
    A =< Pr,
-   !.
-annonce_strategique(gloutonne, _, _, _, B, 'sans annonce', B).
-%
-% stratégie skynet
-% Récap stratégie : On ne fait l'annonce que si notre somme de points en main est inférieur ou égale à la valeur de la plus petite carte présente sur l'un des deux piles.
-% Ce qui permet de ne pas faire d'annonce par exemple si on a 6 points et qu'il y a un As sur l'une des piles. Car le joueur suivent va forcément le prendre et il sera plus dur de le battre.
-%
-annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
-   assertion( (nonvar(M), nonvar(B)) ),
-   min_points_piles(T3, VT),                                     % Les points de la carte min sur les piles
-   points_cartes(M, VM),                                         % La somme des points de nos cartes,
-   VM =< VT,
-   !.
-
-annonce_strategique(skynet, _, _, _, B, 'sans annonce', B).
+   !,
+   plus(B3, 1, B3_plus_1).
+annonce_strategique(gloutonne, _, _, _, cerveau_glouton(B1, B2, B3), 'sans annonce', cerveau_glouton(B1, B2, B3_plus_1)) :-
+   plus(B3, 1, B3_plus_1).
 %
 % stratégie humaine
 %
@@ -3670,7 +3666,7 @@ annonce_strategique(humaine, PS, M, T3, B, A, B) :-  % Comme toujours, pour la s
    ;                  A = 'sans annonce'
    ).
 
-%! demander_pose is det.
+%! demander_pose is semidet.
 %
 demander_pose :-
    format("Voulez-vous annoncer \"moins de neuf\" ? (oui ou non)\n", []),
@@ -3742,6 +3738,17 @@ test(annonce) :-
                       , annonce(S, [], M, T3, B, A, _)
                       )
                     , member(A, ['sans annonce', 'moins de neuf'])
+                    ) ).
+
+test(cerveau_final_strategie_gloutonne) :-
+   jeu(J),
+   assertion( forall( ( between(1, 100, _)
+                      , joueur(J, gloutonne, B)
+                      , distribution(J, [M | _], P3)
+                      , sommets_piles(T3, P3)
+                      , annonce(gloutonne, [], M, T3, B, _, B_post)
+                      )
+                    , B \= B_post
                     ) ).
 
 :- end_tests(annonce).
@@ -3979,11 +3986,11 @@ scores_manche(A, JMS, JSS) :-
                              ), JMS, JSS).
    */
 %
-score_joueur(J, GS, _, 1) :- % TODO
+score_joueur(J, GS, _, 2) :- % TODO
    member(J, GS).
 score_joueur(J, _, PS, 0) :-
    member(J, PS).
-score_joueur(J, GS, PS, 0) :-
+score_joueur(J, GS, PS, 1) :- % TODO 1
    \+ member(J, GS),
    \+ member(J, PS).
    
@@ -4464,7 +4471,7 @@ test(perdant) :-
 %
 % @throws Postcondition.   Le nombre de manches est un entier _strictement_ positif.
 %
-nombre_manches(1000).
+nombre_manches(200).
 
 :- begin_tests(nombre_manches).
 
@@ -4598,3 +4605,58 @@ test(det) :-
 
 % :- show_coverage(run_tests). % Lent à très lent, mais permet de savoir à quel point le code a été testé (60 % pour chacun des trois modules en l'état, sachant que certaines parties ne doivent pas s'exécuter quand le code est correct).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% NOTRE IA
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- discontiguous moins_de_neuf:pioche_strategique/7.
+:- discontiguous moins_de_neuf:annonce_strategique/7.
+:- discontiguous moins_de_neuf:defausse_strategique/8.
+:- discontiguous moins_de_neuf:joueur/3.
+:- discontiguous moins_de_neuf:strategie/1.
+
+joueur('skynet', skynet, cerveau_vide).
+
+strategie(skynet).
+
+%
+% stratégie skynet
+% Récap stratégie : TODO
+%
+defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
+    check_piles_for_combi(T3, M, LSS),
+    get_max_score_combi(LSS, _, P, CB, _, T3),
+    (( CB \= [],
+    cartes_combinaison(CBB, CB),
+    remove_elements_liste(CBB, M, M1),
+    defausse_pioche_opti(M1, C_max)
+    ) ; (
+        defausse_pioche_opti(M, C_max)
+    )),
+    !.
+
+%
+% stratégie skynet
+% Récap strategie: On pioche soit la carte qui nous permet de faire la plus grosse combinaison, soit s'il n’y a pas de combinaison possible, la carte la plus faible (si elle est supérieur à, 7 on pioche).
+%
+pioche_strategique(skynet, _, M, sommets(T1, T2, N_P), B, C, B) :-
+   append(T1, T2, CS),                                                 % On concatène les deux piles
+   recup_pioche_opti(CS, M, N_P, C),                                   % On récupère la carte à piocher en fonction des paramètres d'entrés
+   !.
+
+
+%
+% stratégie skynet
+% Récap stratégie : On ne fait l'annonce que si notre somme de points en main est inférieur ou égale à la valeur de la plus petite carte présente sur l'un des deux piles.
+% Ce qui permet de ne pas faire d'annonce par exemple si on a 6 points et qu'il y a un As sur l'une des piles. Car le joueur suivent va forcément le prendre et il sera plus dur de le battre.
+%
+annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
+   assertion( (nonvar(M), nonvar(B)) ),
+   min_points_piles(T3, VT),                                     % Les points de la carte min sur les piles
+   points_cartes(M, VM),                                         % La somme des points de nos cartes,
+   VM =< VT,
+   !.
+
+annonce_strategique(skynet, _, _, _, B, 'sans annonce', B).
