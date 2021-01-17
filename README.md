@@ -6,7 +6,7 @@
 
 ## Fichiers
 
-Le code est compris dans 2 fichiers distincs :
+Le code est compris dans 2 fichiers distincts :
 - **moins_de_neuf.pl** : Contient l'ensemble des fonctions de la stratégie de l'IA.
 - **skynet.pl** : Contient l'ensemble des fonctions utiles au fonctionnement de la stratégie de l'IA.
 

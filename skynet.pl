@@ -166,6 +166,24 @@ choisir_pile_min_points(sommets(T1, T2, _), [pile_1,pile_2], P) :-
    ; V1 > V2 -> P = pile_1 ),
    !.
 
+%! min_points_pile(+T: [carte], -P) is det.
+%
+% Retourne la pile qui n'est pas celle ou la plus petite carte se trouve.
+%
+% @arg T        Le sommet d'une pile sur la table
+% @arg P        Les points
+%
+% @throws Precondition.    /
+%
+% @throws Postcondition.   Retourne les points de la plus petite carte de la pile.
+%
+min_points_pile([], 1000) .                                           % Si la pile est vide, alors on lui donne un point très important pour s'obliger à poser dessus
+min_points_pile(T, P) :-
+  findall((V, K), (member(K, T), carte(K, V, _)), VCS),
+  argmin_list(C, VCS),                                                % on récupère la carte avec le minimum de points,
+  points_carte(C, P),
+  !.
+
 %! check_pile(+T, +CS, +N, -CSS).
 %
 % Liste toutes les combinaisons possibles avec une combinaison en paramètre et les cartes en sommet de la pile.
@@ -245,7 +263,7 @@ select_combi_max(CB, C, L, CS_max) :-
 
 %! recup_pioche_opti(+T3: sommets, +M: [carte], +N_P: atom, -C: { carte, 'pioche' }) is det.
 %
-% Retourne les points de la plus petite carte présente sur les deux piles.
+% Retourne la carte qu'il faut piocher.
 %
 % @arg T3       Les sommets des trois piles sur la table
 % @arg M        La main
@@ -254,19 +272,20 @@ select_combi_max(CB, C, L, CS_max) :-
 %
 % @throws Precondition.    /
 %
-% @throws Postcondition.   Retourne les de la plus petite carte.
+% @throws Postcondition.   Retourne forcément une carte à prendre ou indique de piocher.
 %
 recup_pioche_opti(T, M, N_P, C) :-
    length(M, L),
+   % On récupère les combinaisons faisable avec une carte de la pile et on les pondères.
    findall((P, CT), (member(CT, T), combinaison([CT|M], CB), cartes_combinaison(CS, CB), length(CS, NCS), L > NCS, points_cartes(CS, P)), CSS),
    length(CSS, CSSL),
-   (( CSSL > 0, argmax_list(C, CSS) )
-   ; ( CSSL == 0, defaut_pioche(T, N_P, C) )),
+   (( CSSL > 0, argmax_list(C, CSS) )                             % S'il y a au moins une combinaison faisable
+   ; ( CSSL == 0, defaut_pioche(T, N_P, C) )),                    % S'il n'y a pas de combinaison faisable
    !.
 
 %! defaut_pioche(+T3: sommets, +N_P, -C: { carte, 'pioche' }) is det.
 %
-% Retourne les points de la plus petite carte présente sur les deux piles.
+% Retourne les actions à faire part défaut lors de la pioche s'il n'y a pas de combinaisons disponibles.
 %
 % @arg T3       Les sommets des trois piles sur la table
 % @arg N_P      Le nombre de cartes dans la pioche
@@ -274,7 +293,7 @@ recup_pioche_opti(T, M, N_P, C) :-
 %
 % @throws Precondition.    /
 %
-% @throws Postcondition.   Retourne les de la plus petite carte.
+% @throws Postcondition.   Retourne forcément une carte de poids minimum à prendre ou indique de piocher.
 %
 defaut_pioche(CS, 0, C) :-
    findall((V, K), (member(K, CS), carte(K, V, _)), VCS),              % après avoir calculé la valeur de chaque carte visible,
@@ -307,7 +326,7 @@ defaut_pioche(CS, N_P, C) :-
 %
 % @throws Precondition.    /
 %
-% @throws Postcondition.   Retourne les de la plus petite carte.
+% @throws Postcondition.   Retourne les points de la plus petite carte.
 %
 min_points_piles(sommets(T1, T2, _), P) :-
    append(T1, T2, CS),                                                 % on concat les deux piles
@@ -316,11 +335,5 @@ min_points_piles(sommets(T1, T2, _), P) :-
    points_carte(C, P),
    !.
 
-min_points_pile([], 1000) .
-min_points_pile(T, P) :-
-  findall((V, K), (member(K, T), carte(K, V, _)), VCS),
-  argmin_list(C, VCS),                                                % on récupère la carte avec le minimum de points,
-  points_carte(C, P),
-  !.
 
 
