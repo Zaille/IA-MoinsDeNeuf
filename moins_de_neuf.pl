@@ -4623,17 +4623,17 @@ strategie(skynet).
 
 %
 % stratégie skynet
-% Récap stratégie : TODO
+% Récap stratégie : Prise en compte des cartes en sommet de pile pour se défausser en anticipant notre pioche. Dépôt de la combinaison / carte avec le maximum de points
 %
 defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
-    check_piles_for_combi(T3, M, LSS),
-    get_max_score_combi(LSS, _, P, CB, _, T3),
-    (( CB \= [],
-    cartes_combinaison(CBB, CB),
-    remove_elements_liste(CBB, M, M1),
-    defausse_pioche_opti(M1, C_max)
-    ) ; (
-        defausse_pioche_opti(M, C_max)
+    check_piles_for_combi(T3, M, LSS),                                      % Récupération de toutes les combinaisons possibles avec les cartes en sommets de pile et notre main
+    get_max_score_combi(LSS, _, P, CB, _, T3),                              % Récupération de la combinaison avec le nombre de points maximal
+    ((  CB \= [],                                                           % Si une combinaison possible a été trouvée
+        cartes_combinaison(CBB, CB),                                        % On récupère la liste des cartes formant la combinaison
+        remove_elements_liste(CBB, M, M1),                                  % On les supprime de notre main pour les garder au prochain tour pour former la combinaison
+        defausse_pioche_opti(M1, C_max)                                     % On se débarrasse de la combinaison / carte avec le plus de points dans notre main triée
+    ) ; (                                                                   % S'il n'y aucune combinaison possible
+        defausse_pioche_opti(M, C_max)                                      % On se défausse de la carte avec le plus de points dans notre main
     )),
     !.
 

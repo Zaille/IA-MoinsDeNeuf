@@ -49,14 +49,14 @@
 % @throws Postcondition.   Une défausse possible avec le nombre de points total.
 %
 defausse_pioche_opti(M, C_max) :-
-   combinaisons(M, CSS),
-   findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),
-   findall((P1, [C]), (member(C, M), points_carte(C, P1)), CPS),
-   append(KPS, CPS, LC),
-   argmax_list(C_max, LC),
+   combinaisons(M, CSS),                                                                            % Récupération de toutes les combinaisons possiblent avec les cartes dans notre main
+   findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),      % Calcul des points de chaque combinaison possible
+   findall((P1, [C]), (member(C, M), points_carte(C, P1)), CPS),                                    % Calcul des points de chaque carte de notre main
+   append(KPS, CPS, LC),                                                                            % Fusion des deux listes de points
+   argmax_list(C_max, LC),                                                                          % Récuperation de la combinaison / carte avec le maximum de points
    !.
 
-%! remove_combi_liste(+CB, +LCS, -LCS2).
+%! remove_combi_liste(+CB, +LCS, -LCS2) is det.
 %
 % Supprime une combinaison d'une liste de combinaisons.
 %
@@ -70,8 +70,9 @@ defausse_pioche_opti(M, C_max) :-
 %
 remove_combi_liste(_, [], []).
 remove_combi_liste(CB, [CS|LCS], [LCS1|LCS2]) :-
-   remove_elements_liste(CB, CS, LCS1),
-   remove_combi_liste(CB, LCS, LCS2).
+   remove_elements_liste(CB, CS, LCS1),             % Appelle de la fonction pour supprimer la combinaison si elle correspond
+   remove_combi_liste(CB, LCS, LCS2),               % Appelle récursif pour traiter la combinaison suivante
+   !.
 
 %! remove_elements_liste(+CB, +M, -M2).
 %
@@ -87,10 +88,11 @@ remove_combi_liste(CB, [CS|LCS], [LCS1|LCS2]) :-
 %
 remove_elements_liste([], M, M).
 remove_elements_liste([CS|CB], M, M2) :-
-    remove_element_liste(CS, M, M1),
-    remove_elements_liste(CB, M1, M2).
+    remove_element_liste(CS, M, M1),            % Appelle de la fonction pour supprimer la combinaison de la main
+    remove_elements_liste(CB, M1, M2),          % Appelle récursif pour traiter la combinaison suivante
+    !.
 
-%! remove_element_liste(+CS, +M, -M1).
+%! remove_element_liste(+CS, +M, -M1) is det.
 %
 % Supprime une carte de la main.
 %
@@ -104,12 +106,14 @@ remove_elements_liste([CS|CB], M, M2) :-
 %
 remove_element_liste(_, [], []).
 remove_element_liste(CS, [CS|M], M1) :-
-    remove_element_liste(CS, M, M1).
+    remove_element_liste(CS, M, M1),                % Appelle récursif avec la carte à soustraire supprimé de la main
+    !.
 remove_element_liste(CS, [C|M], [C|M1]) :-
-    C \= CS,
-    remove_element_liste(CS, M, M1).
+    C \= CS,                                        % On s'assure que la carte à supprimer est différente de la carte en tête de liste
+    remove_element_liste(CS, M, M1),                % Appelle récursif pour traiter la carte suivante de la main
+    !.
 
-%! get_max_score_combi(+CSS, -S2, -P2, -CB2, -C2, +T3).
+%! get_max_score_combi(+CSS, -S2, -P2, -CB2, -C2, +T3) is det.
 %
 % Permet de choisir la pile de défausse en anticipant la carte qui est la plus utile en fonction de notre jeu.
 %
@@ -125,22 +129,22 @@ remove_element_liste(CS, [C|M], [C|M1]) :-
 % @throws Postcondition.   Actions précises de défausse et de pioche
 %
 get_max_score_combi([], 0, P, [], _, T3) :-
-    piles_defausse_possible(T3, PS),
+    piles_defausse_possible(T3, PS),                                    % On récupère les piles où il est possible de se défausser
     !,
-    choisir_pile_min_points(T3, PS, P).
+    choisir_pile_min_points(T3, PS, P).                                 % On récupère la pile opposé à celle qui contient la carte avec le moins de points
 get_max_score_combi([(P1,CB,C,S)|[]], S, P2, CB, C, _) :-
-    ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) ),
+    ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) ),                % La pile de défausse est celle opposé à celle ou la carte qui nous intéresse se trouve
     !.
 get_max_score_combi([(P1,CB1,C1,S1)|CSS], S2, P2, CB2, C2, _) :-
-    get_max_score_combi(CSS, S3, P3, CB3, C3, _),
+    get_max_score_combi(CSS, S3, P3, CB3, C3, _),                       % Appelle récursif pour traiter toutes les combinaisons possibles avec les cartes en sommet de pile et notre main
     ((
-        S1 > S3,
-        S2 = S1,
+        S1 > S3,                                                        % Si le nombre de points de la combinaison courante est supérieur au nombre de points de la combinaison retourné
+        S2 = S1,                                                        % On met à jour les informations à retourner avec les informations de la combinaison courante.
         C2 = C1,
         CB2 = CB1,
-        ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) )
-    ) ; (
-        S2 = S3,
+        ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) )             % La pile de défausse est celle opposé à celle ou la carte qui nous intéresse se trouve
+    ) ; (                                                               % Sinon
+        S2 = S3,                                                        % On met à jour les informations à retourner avec les informations de la combinaison retournée.
         P2 = P3,
         C2 = C3,
         CB2 = CB3
@@ -162,10 +166,10 @@ get_max_score_combi([(P1,CB1,C1,S1)|CSS], S2, P2, CB2, C2, _) :-
 choisir_pile_min_points(_, [pile_1], pile_1) .
 choisir_pile_min_points(_, [pile_2], pile_2) .
 choisir_pile_min_points(sommets(T1, T2, _), [pile_1,pile_2], P) :-
-   min_points_pile(T1, V1),
-   min_points_pile(T2, V2),
-   ( V1 =< V2 -> P = pile_2
-   ; V1 > V2 -> P = pile_1 ),
+   min_points_pile(T1, V1),                                             % On récupère la valeur minimal parmi les cartes de la pile 1
+   min_points_pile(T2, V2),                                             % On récupère la valeur minimal parmi les cartes de la pile 2
+   ( V1 =< V2 -> P = pile_2                                             % Si la valeur max de la pile 1 est inferieur ou égale à celle de la pile 2, on défausse sur la pile 2
+   ; V1 > V2 -> P = pile_1 ),                                           % Sinon, on défausse sur la pile 1
    !.
 
 %! min_points_pile(+T: [carte], -P) is det.
@@ -186,7 +190,7 @@ min_points_pile(T, P) :-
   points_carte(C, P),
   !.
 
-%! check_pile(+T, +CS, +N, -CSS).
+%! check_pile(+T, +CS, +N, -CSS) is det.
 %
 % Liste toutes les combinaisons possibles avec une combinaison en paramètre et les cartes en sommet de la pile.
 %
@@ -201,9 +205,11 @@ min_points_pile(T, P) :-
 %
 check_pile(T, CS, N, CSS) :-
    length(CS, L),
-   findall((N, CCS, C, P1), (member(C, T), combinaison([C|CS], CB), cartes_combinaison(CCS, CB), length(CCS, NCS), NCS is L + 1, points_cartes(CS, P1)), CSS).
+   findall((N, CCS, C, P1), (member(C, T), combinaison([C|CS], CB), cartes_combinaison(CCS, CB), length(CCS, NCS), NCS is L + 1, points_cartes(CS, P1)), CSS). % On récupère les informations de chaque combinaison possible avec une carte donnée et
+                                                                                                                                                               % une combinaison déjà existante ( Numéro de pile de la carte, Liste des cartes formant la combinaison
+                                                                                                                                                               % La carte à piocher pour former la combinaison, Points totals de la combinaison )
 
-%! check_piles_for_combi(+T3, +CS, -TLS).
+%! check_piles_for_combi(+T3, +CS, -TLS) is det.
 %
 % Liste toutes les combinaisons possibles avec la main en paramètre et les cartes en sommet de pile.
 %
@@ -216,12 +222,12 @@ check_pile(T, CS, N, CSS) :-
 % @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
 %
 check_piles_for_combi(sommets(T1,T2,_), M, CSS) :-
-   check_pile_for_combi(T1, M, pile_1, CSS1),
-   check_pile_for_combi(T2, M, pile_2, CSS2),
-   append(CSS1, CSS2, CSS),
+   check_pile_for_combi(T1, M, pile_1, CSS1),           % Récupération de toutes les combinaisons possibles avec les cartes sur la pile 1 une et notre main
+   check_pile_for_combi(T2, M, pile_2, CSS2),           % Récupération de toutes les combinaisons possibles avec les cartes sur la pile 2 une et notre main
+   append(CSS1, CSS2, CSS),                             % Fusion de toutes les combinaisons possibles
    !.
 
-%! check_pile_for_combi(+T, +M, +N, -CSS).
+%! check_pile_for_combi(+T, +M, +N, -CSS) is det.
 %
 % Liste toutes les combinaisons possibles avec notre main en paramètre et les cartes en sommet de la pile.
 %
@@ -236,7 +242,9 @@ check_piles_for_combi(sommets(T1,T2,_), M, CSS) :-
 %
 check_pile_for_combi(T, M, N, CSS) :-
    length(M, L),
-   findall((N, CS, C, P), (member(C, T), combinaisons([C|M], CB), CB \= [], select_combi_max(CB, C, L, CS), cartes_combinaison(CB_max, CS), points_cartes(CB_max, P)), CSS),
+   findall((N, CS, C, P), (member(C, T), combinaisons([C|M], CB), CB \= [], select_combi_max(CB, C, L, CS), cartes_combinaison(CB_max, CS), points_cartes(CB_max, P)), CSS), % On récupère les informations de chaque combinaison possible avec une carte donnée et
+                                                                                                                                                                             % notre main ( Numéro de pile de la carte, Liste des cartes formant la combinaison
+                                                                                                                                                                             % La carte à piocher pour former la combinaison, Points totals de la combinaison )
    !.
 
 %! select_combi_max(+CB, +C, +L, -CS_max).
@@ -254,8 +262,8 @@ check_pile_for_combi(T, M, N, CSS) :-
 %                          au nombre de carte dans la main.
 %
 select_combi_max(CB, C, L, CS_max) :-
-   findall((P, CS), (member(CS, CB), cartes_combinaison(KS, CS), member(C,KS), length(KS, NCS), L > NCS, points_cartes(KS, P)), KPS),
-   argmax_list(CS_max, KPS),
+   findall((P, CS), (member(CS, CB), cartes_combinaison(KS, CS), member(C,KS), length(KS, NCS), L > NCS, points_cartes(KS, P)), KPS), % Tri des combinaisons pour ne garder que celles qui contiennent la carte donnéeen paramètre
+   argmax_list(CS_max, KPS),                                                                                                          % Récupération de la combinaison avec le nombre de points maximal
    !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

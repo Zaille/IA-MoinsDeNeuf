@@ -14,6 +14,14 @@ Le code est compris dans 2 fichiers distincts :
 
 ### Défausse
 
+Lors de la défausse, on regarde d'abord, si une carte sur l'une des piles peut nous être utile pour faire une combinaison 
+à partir de notre jeu. Si c'est le cas, nous mettons de côté les cartes concernées de notre main pour pouvoir faire 
+une combinaison au prochain tour. Également, nous allons nous défausser sur la pile opposée à celle qui contient la 
+carte qui nous intéresse. Enfin, nous nous défaussons de la carte où de la combinaison qui nous débarrasse d'un maximum de points.
+
+Si aucune carte ne nous intéresse en sommet de pile. La défausse suit les mêmes étapes, cette fois en prenant en compte
+toutes les cartes de la main. La défausse se fait sur la pile opposée à celle qui contient la carte au score minimal, de
+façon à ce qu'on puisse la piocher.
 
 ### Pioche
 
