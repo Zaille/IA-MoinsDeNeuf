@@ -43,18 +43,18 @@
 % Déterminer le nombre de points maximals qu'il est possible de défausser à partir du jeu en main.
 %
 % @arg M            La main
-% @arg C_max        Nombre de points maximals pouvant être défausser
+% @arg C_max        Nombre de points maximals pouvant être défaussés
 %
 % @throws Precondition.    /
 %
 % @throws Postcondition.   Une défausse possible avec le nombre de points total.
 %
 defausse_pioche_opti(M, C_max) :-
-   combinaisons(M, CSS),                                                                            % Récupération de toutes les combinaisons possiblent avec les cartes dans notre main
+   combinaisons(M, CSS),                                                                            % Récupération de toutes les combinaisons possibles avec les cartes dans notre main
    findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),      % Calcul des points de chaque combinaison possible
    findall((P1, [C]), (member(C, M), points_carte(C, P1)), CPS),                                    % Calcul des points de chaque carte de notre main
    append(KPS, CPS, LC),                                                                            % Fusion des deux listes de points
-   argmax_list(C_max, LC),                                                                          % Récuperation de la combinaison / carte avec le maximum de points
+   argmax_list(C_max, LC),                                                                          % Récupération de la combinaison / carte avec le maximum de points
    !.
 
 %! remove_combi_liste(+CB, +LCS, -LCS2) is det.
@@ -132,15 +132,15 @@ remove_element_liste(CS, [C|M], [C|M1]) :-
 get_max_score_combi([], 0, P, [], _, T3) :-
     piles_defausse_possible(T3, PS),                                    % On récupère les piles où il est possible de se défausser
     !,
-    choisir_pile_min_points(T3, PS, P).                                 % On récupère la pile opposé à celle qui contient la carte avec le moins de points
+    choisir_pile_min_points(T3, PS, P).                                 % On récupère la pile opposée à celle qui contient la carte avec le moins de points
 get_max_score_combi([(P1,CB,C,S)|[]], S, P2, CB, C, _) :-
     ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) ),                % La pile de défausse est celle opposé à celle ou la carte qui nous intéresse se trouve
     !.
-get_max_score_combi([(_,_,_,S1)|CSS], S3, P3, CB3, C3, _) :-            % Si la combinaison retourné à plus de points que la combinaison courante, on retourne la combinaison retourné
+get_max_score_combi([(_,_,_,S1)|CSS], S3, P3, CB3, C3, _) :-            % Si la combinaison retournée à plus de points que la combinaison courante, on retourne la combinaison retournée
     get_max_score_combi(CSS, S3, P3, CB3, C3, _),                       % Appelle récursif pour traiter toutes les combinaisons possibles avec les cartes en sommet de pile et notre main
     S1 =< S3,
     !.
-get_max_score_combi([(P1,CB1,C1,S1)|CSS], S1, P, CB1, C1, _) :-         % Si la combinaison courante à plus ou autant de points que la combinaison retourné, on retourne la combinaison courante
+get_max_score_combi([(P1,CB1,C1,S1)|CSS], S1, P, CB1, C1, _) :-         % Si la combinaison courante à plus ou autant de points que la combinaison retournée, on retourne la combinaison courante
     get_max_score_combi(CSS, S3, _, _, _, _),                           % Appelle récursif pour traiter toutes les combinaisons possibles avec les cartes en sommet de pile et notre main
     S1 > S3,
     ( ( P1 == pile_1, P = pile_2 ) ; ( P = pile_1 ) ),                  % La pile de défausse est celle opposé à celle ou la carte qui nous intéresse se trouve
@@ -161,9 +161,9 @@ get_max_score_combi([(P1,CB1,C1,S1)|CSS], S1, P, CB1, C1, _) :-         % Si la 
 choisir_pile_min_points(_, [pile_1], pile_1) .
 choisir_pile_min_points(_, [pile_2], pile_2) .
 choisir_pile_min_points(sommets(T1, T2, _), [pile_1,pile_2], P) :-
-   min_points_pile(T1, V1),                                             % On récupère la valeur minimal parmi les cartes de la pile 1
-   min_points_pile(T2, V2),                                             % On récupère la valeur minimal parmi les cartes de la pile 2
-   ( V1 =< V2 -> P = pile_2                                             % Si la valeur max de la pile 1 est inferieur ou égale à celle de la pile 2, on défausse sur la pile 2
+   min_points_pile(T1, V1),                                             % On récupère la valeur minimale parmi les cartes de la pile 1
+   min_points_pile(T2, V2),                                             % On récupère la valeur minimale parmi les cartes de la pile 2
+   ( V1 =< V2 -> P = pile_2                                             % Si la valeur max de la pile 1 est inférieure ou égale à celle de la pile 2, on défausse sur la pile 2
    ; V1 > V2 -> P = pile_1 ),                                           % Sinon, on défausse sur la pile 1
    !.
 
@@ -249,15 +249,15 @@ check_pile_for_combi(T, M, N, CSS) :-
 % @arg CB          Liste de combinaisons
 % @arg C           Une carte, pour vérifier si elle est présente dans les combinaisons
 % @arg L           Taille de la main
-% @arg CS_MAX      Le score maximale parmi toutes les combinaisons
+% @arg CS_MAX      Le score maximal parmi toutes les combinaisons
 %
 % @throws Precondition.    \
 %
 % @throws Postcondition.   Un score est retourné si la Carte apparait dans l'une des combinaison et si sa taille est inférieur
-%                          au nombre de carte dans la main.
+%                          au nombre de cartes dans la main.
 %
 select_combi_max(CB, C, L, CS_max) :-
-   findall((P, CS), (member(CS, CB), cartes_combinaison(KS, CS), member(C,KS), length(KS, NCS), L > NCS, points_cartes(KS, P)), KPS), % Tri des combinaisons pour ne garder que celles qui contiennent la carte donnéeen paramètre
+   findall((P, CS), (member(CS, CB), cartes_combinaison(KS, CS), member(C,KS), length(KS, NCS), L > NCS, points_cartes(KS, P)), KPS), % Tri des combinaisons pour ne garder que celles qui contiennent la carte donnée paramètre
    argmax_list(CS_max, KPS),                                                                                                          % Récupération de la combinaison avec le nombre de points maximal
    !.
 
@@ -283,7 +283,7 @@ select_combi_max(CB, C, L, CS_max) :-
 %
 recup_pioche_opti(T, M, N_P, C) :-
    length(M, L),
-   % On récupère les combinaisons faisable avec une carte de la pile et on les pondères.
+   % On récupère les combinaisons faisables avec une carte de la pile et on les pondères.
    findall((P, CT), (member(CT, T), combinaison([CT|M], CB), cartes_combinaison(CS, CB), length(CS, NCS), L > NCS, points_cartes(CS, P)), CSS),
    length(CSS, CSSL),
    (( CSSL > 0, argmax_list(C, CSS) )                             % S'il y a au moins une combinaison faisable

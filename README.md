@@ -29,9 +29,10 @@ On pioche soit la carte qui nous permet de faire la plus grosse combinaison, soi
 
 ### Annonce
 
-On ne fait l'annonce que si notre somme de points en main est inférieur ou égale à la valeur de la plus petite carte présente sur l'un des deux piles.
+On ne fait l'annonce que si la somme des points des cartes en main est inférieur ou égale à 2.
+Ou si la carte maximale de notre main est inférieur ou égale à la carte minimale présente sur l'une des deux piles.
 Ce qui permet de ne pas faire d'annonce par exemple si on a 6 points et qu'il y a un As sur l'une des piles. 
-Car le joueur suivent va forcément le prendre et il sera plus dur de le battre.
+Car le joueur suivent va forcément le prendre et il sera plus amène de nous battre.
 
 ## Reste à implémenter
 
