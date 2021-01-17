@@ -176,6 +176,7 @@
    , piocher/3
    , remplacer_sommet_multipile/3
    , remplacer_sommets_piles/3
+   , piles_defausse_possible/2
 
      % Joueurs
 
@@ -229,7 +230,13 @@
 
 :- use_module(skynet, [ min_points_piles/2,
                         choisir_pile_min_points/3,
-                        recup_pioche_opti/4
+                        recup_pioche_opti/4,
+                        check_piles_for_combi/3,
+                        check_combis/3,
+                        get_max_score_combi/6,
+                        remove_elements_liste/3,
+                        remove_combi_liste/3,
+                        defausse_pioche_opti/2
 ]).
 
 
@@ -2755,22 +2762,32 @@ defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % 
 % stratégie skynet
 % TODO
 %
-defausse_strategique(skynet, _, M, [], T3, B, defausse([C_max], P), B) :-  % Quant à la stratégie gloutonne, en l'absence de combinaison, et seulement en l'absence de combinaison,                                                                        % et une seule,
-    check_piles_for_combi(T3, M, LSS),                                         % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
+%defausse_strategique(skynet, _, _, CSS, T3, B, defausse(CS_max, P), B) :-
+%   assertion( nonvar(CSS) ),
+%   CSS \= [],
+%   findall(CSTT, (member(CST, CSS), cartes_combinaison(CSTT, CST)), LCS),
+%   check_combis(T3, LCS, LSS),
+%   get_max_score_combi(LSS, _, P, CB, _, T3),
+%   remove_combi_liste(CB, LCS, LCS1),
+%   % , cartes_combinaison(CKS, KS), length(CKS, LKS), length(CS, LCS), LKS == LCS
+%   findall((P1, KS), (member(CS, LCS1), combinaison(CS, KS), cartes_combinaison(CKS, KS), length(CKS, LKS), write(CS), length(CS, LCS), points_cartes(CS, P1)), KPS),
+%   format("- LCS : ~w - LCS1 : ~w - KPS : ~w\n\n", [LCS, LCS1,KPS]),
+%   KPS \= [],
+%   argmax_list(CS_max, KPS),
+%   !.
+defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
+    check_piles_for_combi(T3, M, LSS),
     get_max_score_combi(LSS, _, P, CB, _, T3),
-    remove_elements_liste(CB, M, M1),
-    findall((P1, C), (member(C, M1), points_carte(C, P1)), CPS),                 % après avoir calculé le nombre de points de chaque carte présente dans la main,
-    argmax_list(C_max, CPS),
+    (( CB \= [],
+    cartes_combinaison(CBB, CB),
+    remove_elements_liste(CBB, M, M1),
+    points_cartes(CBB, P1),
+    defausse_pioche_opti(M1, C_max)
+    ) ; (
+        defausse_pioche_opti(M, C_max)
+    )),
     !.
-defausse_strategique(skynet, _, M, CSS, T3, B, defausse(CS_max, P), B) :-     % Si la stratégie skynet a des combinaisons en main,
-   assertion( nonvar(CSS) ),
-   CSS \= [],
-   findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),  % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
-   % maplist([CS, (P, CS)]>>points_cartes(CS, P), CSS, KPS),                  % (la version avec lambda se révélant trop coûteuse),
-   argmax_list(CS_max, KPS),                                                  % elle sélectionne l'une de celles permettant de poser un maximum de points,
-   !,                                                                         % et une seule,
-   check_piles_for_combi(T3, M, LSS),                                         % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
-   get_max_score_combi(LSS, _, P, CB, _, T3).
+
 %
 % stratégie humaine
 %
@@ -2779,50 +2796,6 @@ defausse_strategique(humaine, PS, M, CSS, T3, B, defausse(CS, P), B) :-  % Enfin
    presenter_jeu(PS, M, CSS, T3),                                        % il suffit de présenter l'état du jeu
    demander_cartes_defausse(M, CSS, CS),                                 % et de demander.
    demander_pile(T3, P).
-
-remove_elements_liste([], M, M).
-remove_elements_liste([CS|CB], M, M2) :-
-    remove_element_liste(CS, M, M1),
-    remove_elements_liste(CB, M1, M2).
-
-remove_element_liste(_, [], []).
-remove_element_liste(CS, [CS|M], M1) :-
-    remove_element_liste(CS, M, M1).
-remove_element_liste(CS, [C|M], [C|M1]) :-
-    C \= CS,
-    remove_element_liste(CS, M, M1).
-
-get_max_score_combi([], 0, P, [], _, T3) :-
-    piles_defausse_possible(T3, PS),
-    !,
-    choisir_pile_min_points(T3, PS, P).
-get_max_score_combi([(P1,CB,C,S)|[]], S, P2, CB, C, _) :-
-    ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) ),
-    !.
-get_max_score_combi([(P1,CB1,C1,S1)|CSS], S2, P2, CB2, C2, _) :-
-    get_max_score_combi(CSS, S3, P3, CB3, C3, _),
-    ((
-        S1 > S3,
-        S2 = S1,
-        C2 = C1,
-        CB2 = CB1,
-        ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) )
-    ) ; (
-        S2 = S3,
-        P2 = P3,
-        C2 = C3,
-        CB2 = CB3
-    )),
-    !.
-
-check_piles_for_combi(sommets(T1,T2,_), M, CSS) :-
-   check_pile_for_combi(T1, M, pile_1, CSS1),
-   check_pile_for_combi(T2, M, pile_2, CSS2),
-   append(CSS1, CSS2, CSS).
-
-check_pile_for_combi(T, M, N, CSS) :-
-   length(M, L),
-   findall((N, CS, C, P), (member(C, T), combinaison([C|M], CB), cartes_combinaison(CS, CB), length(CS, NCS), L > NCS, points_cartes(CS, P)), CSS).
 
 %! presenter_jeu(+PS, +M, +CSS, +T3) is det.
 %

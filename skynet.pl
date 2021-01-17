@@ -12,7 +12,13 @@
 :- module(skynet, [
                         min_points_piles/2,
                         choisir_pile_min_points/3,
-                        recup_pioche_opti/4
+                        recup_pioche_opti/4,
+                        check_piles_for_combi/3,
+                        check_combis/3,
+                        get_max_score_combi/6,
+                        remove_elements_liste/3,
+                        remove_combi_liste/3,
+                        defausse_pioche_opti/2
                       ]).
 
 :- use_module(utilities, [
@@ -20,6 +26,9 @@
                          argmax_list/2
                          ]).
 
+:- use_module(moins_de_neuf, [
+                         piles_defausse_possible/2
+                         ]).
 
 
 %! min_points_piles(+T3: sommets, -P) is det.
@@ -120,4 +129,198 @@ recup_pioche_opti(T, M, N_P, C) :-
    ; ( CSSL == 0, defaut_pioche(T, N_P, C) )),
    !.
 
+defausse_pioche_opti(M, C_max) :-
+   combinaisons(M, CSS),
+   findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),  % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
+   findall((P1, [C]), (member(C, M), points_carte(C, P1)), CPS),
+   append(KPS, CPS, LC),
+   argmax_list(C_max, LC),
+   !.
 
+defaut_défausse(M, [C_max]) :-
+    findall(([P1], C), (member(C, M), points_carte(C, P1)), CPS),
+    argmax_list(C_max, CPS),
+    !.
+
+%! remove_combi_liste(+CB, +LCS, -LCS2).
+%
+% Supprime une combinaison d'une liste de combinaisons.
+%
+% @arg CB       La combinaison à supprimer
+% @arg LCS      La liste de combinaisons
+% @arg LCS2     La liste de combinaisons avec la combinaison supprimée
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Liste identique ou avec une combinaison en moins.
+%
+remove_combi_liste(_, [], []).
+remove_combi_liste(CB, [CS|LCS], [LCS1|LCS2]) :-
+   remove_elements_liste(CB, CS, LCS1),
+   remove_combi_liste(CB, LCS, LCS2).
+
+%! remove_elements_liste(+CB, +M, -M2).
+%
+% Supprime une combinaison de la main.
+%
+% @arg CB       La combinaison à supprimer
+% @arg M        La main
+% @arg M2       La main avec la combinaison supprimée
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Main identique ou avec une combinaison en moins.
+%
+remove_elements_liste([], M, M).
+remove_elements_liste([CS|CB], M, M2) :-
+    remove_element_liste(CS, M, M1),
+    remove_elements_liste(CB, M1, M2).
+
+%! remove_element_liste(+CS, +M, -M1).
+%
+% Supprime une carte de la main.
+%
+% @arg CS       La carte à supprimer
+% @arg M        La main
+% @arg M1       La main avec la carte supprimée
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Main identique ou avec une carte en moins.
+%
+remove_element_liste(_, [], []).
+remove_element_liste(CS, [CS|M], M1) :-
+    remove_element_liste(CS, M, M1).
+remove_element_liste(CS, [C|M], [C|M1]) :-
+    C \= CS,
+    remove_element_liste(CS, M, M1).
+
+%! get_max_score_combi(+CSS, -S2, -P2, -CB2, -C2, +T3).
+%
+% Permet de choisir la pile de défausse en anticipant la carte qui est la plus utile en fonction de notre jeu.
+%
+% @arg CSS       Liste d'informations sur les combinaisons possibles avec les cartes en sommet de pile
+% @arg S2        Score max des combinaisons possibles avec les cartes en sommet de pile
+% @arg P2        La pile ou se défausser
+% @arg CB2       La combinaison la plus intéressante à créer avec les cartes en sommet de pile
+% @arg C2        La carte à piocher pour créer la combinaison
+% @arg T3        Les sommets des trois piles sur la table
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Actions précises de défausse et de pioche
+%
+get_max_score_combi([], 0, P, [], _, T3) :-
+    piles_defausse_possible(T3, PS),
+    !,
+    choisir_pile_min_points(T3, PS, P).
+get_max_score_combi([(P1,CB,C,S)|[]], S, P2, CB, C, _) :-
+    ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) ),
+    !.
+get_max_score_combi([(P1,CB1,C1,S1)|CSS], S2, P2, CB2, C2, _) :-
+    get_max_score_combi(CSS, S3, P3, CB3, C3, _),
+    ((
+        S1 > S3,
+        S2 = S1,
+        C2 = C1,
+        CB2 = CB1,
+        ( ( P1 == pile_1, P2 = pile_2 ) ; ( P2 = pile_1 ) )
+    ) ; (
+        S2 = S3,
+        P2 = P3,
+        C2 = C3,
+        CB2 = CB3
+    )),
+    !.
+
+%! check_combis(+T3, +CSS, -LSS).
+%
+% Liste toutes les combinaisons possibles avec les combinaisons déjà présentent dans notre main et les cartes en sommet
+% de pile.
+%
+% @arg T3         Les sommets des trois piles sur la table
+% @arg CSS        Liste des combinaisons présentent dans notre main
+% @arg LSS        Liste des combinaisons possibles avec chacune des cartes en sommet de pile
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
+%
+check_combis(T3, CSS, LSS) :-
+    findall(TLS, (member(CS,CSS), check_piles(T3, CS, TLS)), LCS),
+    flatten(LCS, LSS) .
+
+%! check_combis(+T3, +CS, -TLS).
+%
+% Liste toutes les combinaisons possibles avec une combinaison en paramètre et les cartes en sommet de pile.
+%
+% @arg T3         Les sommets des trois piles sur la table
+% @arg CS         Une combinaison
+% @arg TLS        Liste des combinaisons possibles avec chacune des cartes en sommet de pile
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
+%
+check_piles(sommets(T1,T2,_), CS, TLS) :-
+   check_pile(T1, CS, pile_1, CSS1),
+   check_pile(T2, CS, pile_2, CSS2),
+   append(CSS1, CSS2, TLS).
+
+%! check_combis(+T, +CS, +N, -CSS).
+%
+% Liste toutes les combinaisons possibles avec une combinaison en paramètre et les cartes en sommet de la pile.
+%
+% @arg T          Le sommet d'une pile sur la table
+% @arg CS         Une combinaison
+% @arg N          Le nom de la pile
+% @arg CSS        Liste des combinaisons possibles avec chacune des cartes en sommet de la pile
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
+%
+check_pile(T, CS, N, CSS) :-
+   length(CS, L),
+   findall((N, CCS, C, P1), (member(C, T), combinaison([C|CS], CB), cartes_combinaison(CCS, CB), length(CCS, NCS), NCS is L + 1, points_cartes(CS, P1)), CSS).
+
+%! check_piles_for_combi(+T3, +CS, -TLS).
+%
+% Liste toutes les combinaisons possibles avec la main en paramètre et les cartes en sommet de pile.
+%
+% @arg T3         Les sommets des trois piles sur la table
+% @arg CS         Une combinaison
+% @arg TLS        Liste des combinaisons possibles avec chacune des cartes en sommet de pile
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
+%
+check_piles_for_combi(sommets(T1,T2,_), M, CSS) :-
+   check_pile_for_combi(T1, M, pile_1, CSS1),
+   check_pile_for_combi(T2, M, pile_2, CSS2),
+   append(CSS1, CSS2, CSS),
+   !.
+
+%! check_combis(+T, +M, +N, -CSS).
+%
+% Liste toutes les combinaisons possibles avec notre main en paramètre et les cartes en sommet de la pile.
+%
+% @arg T          Le sommet d'une pile sur la table
+% @arg M          Notre main
+% @arg N          Le nom de la pile
+% @arg CSS        Liste des combinaisons possibles avec chacune des cartes en sommet de la pile
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
+%
+check_pile_for_combi(T, M, N, CSS) :-
+   length(M, L),
+   findall((N, CS, C, P), (member(C, T), combinaisons([C|M], CB), CB \= [], select_combi_max(CB, C, L, CS), cartes_combinaison(CB_max, CS), points_cartes(CB_max, P)), CSS),
+   !.
+
+select_combi_max(CB, C, L, CS_max) :-
+   findall((P, CS), (member(CS, CB), cartes_combinaison(KS, CS), member(C,KS), length(KS, NCS), L > NCS, points_cartes(KS, P)), KPS),  % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
+   argmax_list(CS_max, KPS),
+   !.
