@@ -137,11 +137,12 @@ get_max_score_combi([(P1,CB,C,S)|[]], S, P2, CB, C, _) :-
     !.
 get_max_score_combi([(_,_,_,S1)|CSS], S3, P3, CB3, C3, _) :-            % Si la combinaison retourné à plus de points que la combinaison courante, on retourne la combinaison retourné
     get_max_score_combi(CSS, S3, P3, CB3, C3, _),                       % Appelle récursif pour traiter toutes les combinaisons possibles avec les cartes en sommet de pile et notre main
-    S1 < S3,
+    S1 =< S3,
     !.
-get_max_score_combi([(P1,CB1,C1,S1)|CSS], S1, P1, CB1, C1, _) :-        % Si la combinaison courante à plus ou autant de points que la combinaison retourné, on retourne la combinaison courante
+get_max_score_combi([(P1,CB1,C1,S1)|CSS], S1, P, CB1, C1, _) :-         % Si la combinaison courante à plus ou autant de points que la combinaison retourné, on retourne la combinaison courante
     get_max_score_combi(CSS, S3, _, _, _, _),                           % Appelle récursif pour traiter toutes les combinaisons possibles avec les cartes en sommet de pile et notre main
-    S1 >= S3,
+    S1 > S3,
+    ( ( P1 == pile_1, P = pile_2 ) ; ( P = pile_1 ) ),                  % La pile de défausse est celle opposé à celle ou la carte qui nous intéresse se trouve
     !.
 
 %! choisir_pile_min_points(+T3: sommets, +B, -P) is det.

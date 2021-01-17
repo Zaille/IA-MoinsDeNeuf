@@ -4649,7 +4649,7 @@ pioche_strategique(skynet, _, M, sommets(T1, T2, N_P), B, C, B) :-
 
 %
 % stratégie skynet
-% Récap stratégie : On ne fait l'annonce que si notre somme de points en main est inférieur ou égale à la valeur de la plus petite carte présente sur l'un des deux piles.
+% Récap stratégie : On ne fait l'annonce que si notre somme de points en main est inférieur ou égale à la valeur de la plus petite carte présente sur l'une des deux piles.
 % Ce qui permet de ne pas faire d'annonce par exemple si on a 6 points et qu'il y a un As sur l'une des piles. Car le joueur suivent va forcément le prendre et il sera plus dur de le battre.
 %
 annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
