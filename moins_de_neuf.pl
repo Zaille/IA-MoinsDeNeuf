@@ -2759,7 +2759,7 @@ defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % 
    random_member(P, PS).                                                      % et de la poser sur l'une ou l'autre pile visible de manière équiprobable également.
 %
 % stratégie skynet
-% TODO
+% Récap stratégie : TODO
 %
 defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
     check_piles_for_combi(T3, M, LSS),
@@ -3193,11 +3193,11 @@ pioche_strategique(gloutonne, _, _, sommets(T1, T2, N_P), B, C, B) :-  % Mais,
    ).
 %
 % stratégie skynet
-% TODO
+% Récap strategie: On pioche soit la carte qui nous permet de faire la plus grosse combinaison, soit s'il n’y a pas de combinaison possible, la carte la plus faible (si elle est supérieur à, 7 on pioche).
 %
 pioche_strategique(skynet, _, M, sommets(T1, T2, N_P), B, C, B) :-
-   append(T1, T2, CS),
-   recup_pioche_opti(CS, M, N_P, C),
+   append(T1, T2, CS),                                                 % On concatène les deux piles
+   recup_pioche_opti(CS, M, N_P, C),                                   % On récupère la carte à piocher en fonction des paramètres d'entrés
    !.
 %
 % stratégie humaine
@@ -3645,7 +3645,8 @@ annonce_strategique(gloutonne, _, M, _, B, 'moins de neuf', B) :-  % La stratég
 annonce_strategique(gloutonne, _, _, _, B, 'sans annonce', B).
 %
 % stratégie skynet
-% TODO
+% Récap stratégie : On ne fait l'annonce que si notre somme de points en main est inférieur ou égale à la valeur de la plus petite carte présente sur l'un des deux piles.
+% Ce qui permet de ne pas faire d'annonce par exemple si on a 6 points et qu'il y a un As sur l'une des piles. Car le joueur suivent va forcément le prendre et il sera plus dur de le battre.
 %
 annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
    assertion( (nonvar(M), nonvar(B)) ),
