@@ -234,7 +234,8 @@
                         check_piles_for_combi/3,
                         get_max_score_combi/6,
                         remove_elements_liste/3,
-                        defausse_pioche_opti/2
+                        defausse_pioche_opti/2,
+                        max_points_main/2
 ]).
 
 
@@ -3986,11 +3987,11 @@ scores_manche(A, JMS, JSS) :-
                              ), JMS, JSS).
    */
 %
-score_joueur(J, GS, _, 2) :- % TODO
+score_joueur(J, GS, _, 2) :-
    member(J, GS).
 score_joueur(J, _, PS, 0) :-
    member(J, PS).
-score_joueur(J, GS, PS, 1) :- % TODO 1
+score_joueur(J, GS, PS, 1) :-
    \+ member(J, GS),
    \+ member(J, PS).
    
@@ -4471,7 +4472,7 @@ test(perdant) :-
 %
 % @throws Postcondition.   Le nombre de manches est un entier _strictement_ positif.
 %
-nombre_manches(200).
+nombre_manches(1000).
 
 :- begin_tests(nombre_manches).
 
@@ -4597,19 +4598,18 @@ test(det) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
-
-
 % :- run_tests().  % Les tests de ce module et éventuellement des modules chargés sont automatiquement exécutés si cette ligne est décommentée.
 % :- run_tests(jouer_partie).  % On peut ne lancer que certains tests en précisant lequel ou lesquels (dans une liste).
 
 % :- show_coverage(run_tests). % Lent à très lent, mais permet de savoir à quel point le code a été testé (60 % pour chacun des trois modules en l'état, sachant que certaines parties ne doivent pas s'exécuter quand le code est correct).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % NOTRE IA
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 :- discontiguous moins_de_neuf:pioche_strategique/7.
 :- discontiguous moins_de_neuf:annonce_strategique/7.
@@ -4622,8 +4622,7 @@ joueur('skynet', skynet, cerveau_vide).
 strategie(skynet).
 
 %
-% stratégie skynet
-% Récap stratégie : Prise en compte des cartes en sommet de pile pour se défausser en anticipant notre pioche. Dépôt de la combinaison / carte avec le maximum de points
+% Défausse
 %
 defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
     check_piles_for_combi(T3, M, LSS),                                      % Récupération de toutes les combinaisons possibles avec les cartes en sommets de pile et notre main
@@ -4638,8 +4637,7 @@ defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
     !.
 
 %
-% stratégie skynet
-% Récap strategie: On pioche soit la carte qui nous permet de faire la plus grosse combinaison, soit s'il n’y a pas de combinaison possible, la carte la plus faible (si elle est supérieur à, 7 on pioche).
+% Pioche
 %
 pioche_strategique(skynet, _, M, sommets(T1, T2, N_P), B, C, B) :-
    append(T1, T2, CS),                                                 % On concatène les deux piles
@@ -4648,15 +4646,16 @@ pioche_strategique(skynet, _, M, sommets(T1, T2, N_P), B, C, B) :-
 
 
 %
-% stratégie skynet
-% Récap stratégie : On ne fait l'annonce que si notre somme de points en main est inférieur ou égale à la valeur de la plus petite carte présente sur l'une des deux piles.
-% Ce qui permet de ne pas faire d'annonce par exemple si on a 6 points et qu'il y a un As sur l'une des piles. Car le joueur suivent va forcément le prendre et il sera plus dur de le battre.
+% Annonce
 %
-annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-  % La stratégie skynet s'arrête,
+annonce_strategique(skynet, _, M, T3, B, 'moins de neuf', B) :-
    assertion( (nonvar(M), nonvar(B)) ),
    min_points_piles(T3, VT),                                     % Les points de la carte min sur les piles
-   points_cartes(M, VM),                                         % La somme des points de nos cartes,
-   VM =< VT,
+   points_cartes(M, VM),                                         % La somme des points de nos cartes
+   max_points_main(M, MVM),                                      % Les points de la carte max
+   ( (VM =< 2 ) -> true                                          % Si la somme des cartes de la main est inf ou égal à 2 on annonce
+    ; MVM =< VT
+    ),
    !.
 
 annonce_strategique(skynet, _, _, _, B, 'sans annonce', B).

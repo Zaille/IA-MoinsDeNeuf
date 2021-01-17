@@ -1,6 +1,6 @@
 % gvim:  fileencoding=utf8
 
-/** <module> Our super AI
+/** <module> Skynet - notre IA
  *
  * @author Lucas Hervouet & Étienne Lécrivain
  * @license proprietary
@@ -17,7 +17,8 @@
                         get_max_score_combi/6,
                         remove_elements_liste/3,
                         remove_combi_liste/3,
-                        defausse_pioche_opti/2
+                        defausse_pioche_opti/2,
+                        max_points_main/2
                       ]).
 
 :- use_module(utilities, [
@@ -344,5 +345,18 @@ min_points_piles(sommets(T1, T2, _), P) :-
    points_carte(C, P),
    !.
 
-
+%! min_points_piles(+M: [carte], -P) is det.
+%
+% Retourne les points de la plus grande carte présente dans la main.
+%
+% @arg M       La main
+% @arg P       Les points de la plus grande carte
+%
+% @throws Postcondition.   Retourne les points de la plus grande carte.
+%
+max_points_main(M, P) :-
+   findall((V, K), (member(K, M), carte(K, V, _)), VCS),
+   argmax_list(C, VCS),                                                % on récupère la carte avec le minimum de points,
+   points_carte(C, P),
+   !.
 
