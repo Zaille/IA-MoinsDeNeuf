@@ -14,7 +14,6 @@
                         choisir_pile_min_points/3,
                         recup_pioche_opti/4,
                         check_piles_for_combi/3,
-                        check_combis/3,
                         get_max_score_combi/6,
                         remove_elements_liste/3,
                         remove_combi_liste/3,
@@ -129,18 +128,24 @@ recup_pioche_opti(T, M, N_P, C) :-
    ; ( CSSL == 0, defaut_pioche(T, N_P, C) )),
    !.
 
+%! defausse_pioche_opti(+M: sommets, -C_max) is det.
+%
+% Déterminer le nombre de points maximals qu'il est possible de défausser à partir du jeu en main.
+%
+% @arg M            La main
+% @arg C_max        Nombre de points maximals pouvant être défausser
+%
+% @throws Precondition.    /
+%
+% @throws Postcondition.   Une défausse possible avec le nombre de points total.
+%
 defausse_pioche_opti(M, C_max) :-
    combinaisons(M, CSS),
-   findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),  % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
+   findall((P, CS), (member(CS, CSS), cartes_combinaison(KS, CS), points_cartes(KS, P)), KPS),
    findall((P1, [C]), (member(C, M), points_carte(C, P1)), CPS),
    append(KPS, CPS, LC),
    argmax_list(C_max, LC),
    !.
-
-defaut_défausse(M, [C_max]) :-
-    findall(([P1], C), (member(C, M), points_carte(C, P1)), CPS),
-    argmax_list(C_max, CPS),
-    !.
 
 %! remove_combi_liste(+CB, +LCS, -LCS2).
 %
@@ -233,41 +238,7 @@ get_max_score_combi([(P1,CB1,C1,S1)|CSS], S2, P2, CB2, C2, _) :-
     )),
     !.
 
-%! check_combis(+T3, +CSS, -LSS).
-%
-% Liste toutes les combinaisons possibles avec les combinaisons déjà présentent dans notre main et les cartes en sommet
-% de pile.
-%
-% @arg T3         Les sommets des trois piles sur la table
-% @arg CSS        Liste des combinaisons présentent dans notre main
-% @arg LSS        Liste des combinaisons possibles avec chacune des cartes en sommet de pile
-%
-% @throws Precondition.    \
-%
-% @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
-%
-check_combis(T3, CSS, LSS) :-
-    findall(TLS, (member(CS,CSS), check_piles(T3, CS, TLS)), LCS),
-    flatten(LCS, LSS) .
-
-%! check_combis(+T3, +CS, -TLS).
-%
-% Liste toutes les combinaisons possibles avec une combinaison en paramètre et les cartes en sommet de pile.
-%
-% @arg T3         Les sommets des trois piles sur la table
-% @arg CS         Une combinaison
-% @arg TLS        Liste des combinaisons possibles avec chacune des cartes en sommet de pile
-%
-% @throws Precondition.    \
-%
-% @throws Postcondition.   Les combinaisons proposées sont plus intéressantes que celles possibles initialement avec notre jeu
-%
-check_piles(sommets(T1,T2,_), CS, TLS) :-
-   check_pile(T1, CS, pile_1, CSS1),
-   check_pile(T2, CS, pile_2, CSS2),
-   append(CSS1, CSS2, TLS).
-
-%! check_combis(+T, +CS, +N, -CSS).
+%! check_pile(+T, +CS, +N, -CSS).
 %
 % Liste toutes les combinaisons possibles avec une combinaison en paramètre et les cartes en sommet de la pile.
 %
@@ -302,7 +273,7 @@ check_piles_for_combi(sommets(T1,T2,_), M, CSS) :-
    append(CSS1, CSS2, CSS),
    !.
 
-%! check_combis(+T, +M, +N, -CSS).
+%! check_pile_for_combi(+T, +M, +N, -CSS).
 %
 % Liste toutes les combinaisons possibles avec notre main en paramètre et les cartes en sommet de la pile.
 %
@@ -320,7 +291,21 @@ check_pile_for_combi(T, M, N, CSS) :-
    findall((N, CS, C, P), (member(C, T), combinaisons([C|M], CB), CB \= [], select_combi_max(CB, C, L, CS), cartes_combinaison(CB_max, CS), points_cartes(CB_max, P)), CSS),
    !.
 
+%! select_combi_max(+CB, +C, +L, -CS_max).
+%
+% Récupère la combinaison d'une liste de combinaisons avec le score le plus élevé
+%
+% @arg CB          Liste de combinaisons
+% @arg C           Une carte, pour vérifier si elle est présente dans les combinaisons
+% @arg L           Taille de la main
+% @arg CS_MAX      Le score maximale parmi toutes les combinaisons
+%
+% @throws Precondition.    \
+%
+% @throws Postcondition.   Un score est retourné si la Carte apparait dans l'une des combinaison et si sa taille est inférieur
+%                          au nombre de carte dans la main.
+%
 select_combi_max(CB, C, L, CS_max) :-
-   findall((P, CS), (member(CS, CB), cartes_combinaison(KS, CS), member(C,KS), length(KS, NCS), L > NCS, points_cartes(KS, P)), KPS),  % après avoir calculé le nombre de points de chaque combinaison présente dans la main,
+   findall((P, CS), (member(CS, CB), cartes_combinaison(KS, CS), member(C,KS), length(KS, NCS), L > NCS, points_cartes(KS, P)), KPS),
    argmax_list(CS_max, KPS),
    !.

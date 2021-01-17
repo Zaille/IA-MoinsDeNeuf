@@ -232,10 +232,8 @@
                         choisir_pile_min_points/3,
                         recup_pioche_opti/4,
                         check_piles_for_combi/3,
-                        check_combis/3,
                         get_max_score_combi/6,
                         remove_elements_liste/3,
-                        remove_combi_liste/3,
                         defausse_pioche_opti/2
 ]).
 
@@ -2355,6 +2353,7 @@ joueur('skynet', skynet, cerveau_vide).
 joueur("gloutonne", gloutonne, cerveau_vide).
 joueur("primitive", primitive, cerveau_vide).
 joueur("gloutonne2", gloutonne, cerveau_vide).
+
 /*
 joueur(bank2, gloutonne, cerveau_vide).
 joueur(bank3, gloutonne, cerveau_vide).
@@ -2762,26 +2761,12 @@ defausse_strategique(gloutonne, _, _, CSS, T3, B, defausse(CS_max, P), B) :-  % 
 % stratégie skynet
 % TODO
 %
-%defausse_strategique(skynet, _, _, CSS, T3, B, defausse(CS_max, P), B) :-
-%   assertion( nonvar(CSS) ),
-%   CSS \= [],
-%   findall(CSTT, (member(CST, CSS), cartes_combinaison(CSTT, CST)), LCS),
-%   check_combis(T3, LCS, LSS),
-%   get_max_score_combi(LSS, _, P, CB, _, T3),
-%   remove_combi_liste(CB, LCS, LCS1),
-%   % , cartes_combinaison(CKS, KS), length(CKS, LKS), length(CS, LCS), LKS == LCS
-%   findall((P1, KS), (member(CS, LCS1), combinaison(CS, KS), cartes_combinaison(CKS, KS), length(CKS, LKS), write(CS), length(CS, LCS), points_cartes(CS, P1)), KPS),
-%   format("- LCS : ~w - LCS1 : ~w - KPS : ~w\n\n", [LCS, LCS1,KPS]),
-%   KPS \= [],
-%   argmax_list(CS_max, KPS),
-%   !.
 defausse_strategique(skynet, _, M, _, T3, B, defausse(C_max, P), B) :-
     check_piles_for_combi(T3, M, LSS),
     get_max_score_combi(LSS, _, P, CB, _, T3),
     (( CB \= [],
     cartes_combinaison(CBB, CB),
     remove_elements_liste(CBB, M, M1),
-    points_cartes(CBB, P1),
     defausse_pioche_opti(M1, C_max)
     ) ; (
         defausse_pioche_opti(M, C_max)
