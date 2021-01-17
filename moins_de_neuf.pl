@@ -4020,11 +4020,11 @@ scores_manche(A, JMS, JSS) :-
                              ), JMS, JSS).
    */
 %
-score_joueur(J, GS, _, 2) :-
+score_joueur(J, GS, _, 1) :- % TODO
    member(J, GS).
 score_joueur(J, _, PS, 0) :-
    member(J, PS).
-score_joueur(J, GS, PS, 1) :-
+score_joueur(J, GS, PS, 0) :-
    \+ member(J, GS),
    \+ member(J, PS).
    
